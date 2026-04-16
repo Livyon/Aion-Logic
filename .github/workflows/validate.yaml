@@ -1,0 +1,60 @@
+name: Aion Logic Code X-Ray (Edge Check)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  schedule:
+    - cron: "0 2 * * *" # De Live Analyzer: Draait elke nacht om 02:00
+
+jobs:
+  validate-edge-code:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+    - name: 📥 Haal de code op (Checkout)
+      uses: actions/checkout@v4
+
+    - name: 🐍 Start virtuele Python omgeving
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: 📦 Installeer Aion X-Ray tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8
+
+    - name: 🔬 Python Syntax & Crash Check
+      run: |
+        # We scannen uitsluitend op fatale fouten (Syntax, undefined names).
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    - name: 🗂️ Valideer JSON configuraties
+      run: |
+        # Controleert op syntaxfouten in alle JSON bestanden
+        find . -name "*.json" -exec python -m json.tool {} > /dev/null \;
+
+  hassfest:
+    name: 🕵️‍♂️ Home Assistant Hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Haal de code op (Checkout)
+        uses: actions/checkout@v4
+      
+      - name: 🔍 Draai Hassfest Scan
+        uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: 📦 HACS Validatie
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Haal de code op (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 🛡️ HACS Action Check
+        uses: hacs/action@main
+        with:
+          category: integration
