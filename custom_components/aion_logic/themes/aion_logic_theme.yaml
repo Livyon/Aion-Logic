@@ -1,0 +1,233 @@
+aion_logic_dynamic_background_theme:
+  # ===================================================================
+  # 1. CARD-MOD INTEGRATIE (DYNAMISCHE ACHTERGROND & POP-UPS)
+  # ===================================================================
+  card-mod-theme: aion_logic_dynamic_background_theme
+  card-mod-view-yaml: |
+    .: |
+      /* 1. De Dynamische Achtergrond */
+      hui-masonry-view, hui-sidebar-view, hui-sections-view, hui-panel-view, hui-view {
+        /* Let op: Hier wordt de nieuwe sensor naam gebruikt! */
+        background: center / cover no-repeat fixed url("{{ states('sensor.aion_logic_background_url') }}") #161616 !important;
+        min-height: 100vh;
+      }
+
+      /* 2. De Header (Transparant met blur) */
+      app-header {
+        background-color: rgba(22, 22, 22, 0.1) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255,255,255,0.01);
+      }
+      app-toolbar {
+        background: transparent !important;
+      }
+
+      /* 3. BUBBLE POP-UP TRANSPARANTIE (DE FIX) */
+      bubble-pop-up {
+        backdrop-filter: blur(20px);           /* Zorgt voor het wazige effect erachter */
+        -webkit-backdrop-filter: blur(20px);
+      }
+
+      bubble-pop-up ha-card {
+        /* AANGEPAST: 0.40 zorgt voor sterke transparantie (glas effect) */
+        background: rgba(22, 22, 22, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Mooie diepe schaduw */
+      }
+
+  # ===================================================================
+  # 2. AION LOGIC THEMA INSTELLINGEN
+  # ===================================================================
+
+  # Maak de standaard HA achtergrond transparant zodat Card-mod werkt
+  background-image: "none"
+  background-color: "rgba(0,0,0,0)"
+  ha-background-image: "none"
+  ha-background-color: "rgba(0,0,0,0)"
+
+  #--------------------------------------------------
+  #-- Kleurenpalet --#
+  #--------------------------------------------------
+  primary-color: "#78b7bb" # Hoofd interactie kleur (Muted Aqua)
+  light-primary-color: "#a2cdcf" # Lichtere variant van Muted Aqua
+  primary-background-color: "#161616"
+  secondary-background-color: "rgba(22, 22, 22, 0.4)" # Dit blijft donker voor je DASHBOARD kaarten
+  card-background-color: "var(--secondary-background-color)"
+  divider-color: "rgba(255, 255, 255, 0.1)"
+  active-state-color: "#F9AB00"
+  bubble-default-color: "var(--primary-color)"
+
+  # RGB varianten voor consistentie
+  rgb-primary-color: 120, 183, 187
+  rgb-light-primary-color: 162, 205, 207
+  rgb-primary-background-color: 22, 22, 22
+  rgb-secondary-background-color: 0, 0, 0, 0.25
+  rgb-card-background-color: "var(--rgb-secondary-background-color)"
+  rgb-divider-color: 255, 255, 255, 0.1
+  rgb-active-state-color: 249, 171, 0
+
+  #--------------------------------------------------
+  #-- Tekst --#
+  #--------------------------------------------------
+  primary-text-color: "#FFFFFF"
+  secondary-text-color: "#CCCCCC"
+  text-primary-color: "var(--primary-text-color)"
+  text-secondary-color: "var(--secondary-text-color)"
+  disabled-text-color: "#777777"
+
+  # RGB Tekst varianten
+  rgb-primary-text-color: 255, 255, 255
+  rgb-secondary-text-color: 204, 204, 204
+  rgb-disabled-text-color: 119, 119, 119
+
+  #--------------------------------------------------
+  #-- Header, Navigatie & Sidebar --#
+  #--------------------------------------------------
+  app-header-background-color: "rgba(0,0,0,0)"
+  app-header-text-color: "var(--primary-text-color)"
+  app-header-border-bottom: "none"
+  "--accent-color": "var(--primary-color)"
+
+  sidebar-icon-color: "var(--secondary-text-color)"
+  sidebar-text-color: "var(--secondary-text-color)"
+  sidebar-selected-background-color: "rgba(255, 255, 255, 0.1)"
+  sidebar-selected-icon-color: "var(--primary-color)"
+  sidebar-selected-text-color: "var(--primary-text-color)"
+  sidebar-background-color: "var(--primary-background-color)"
+  sidebar-hover-color: "var(--sidebar-selected-background-color)"
+
+  #--------------------------------------------------
+  #-- Kaarten & Layout Gaps --#
+  #--------------------------------------------------
+  ha-card-background: "var(--card-background-color)"
+  ha-card-border-radius: "16px"
+  ha-card-box-shadow: "none"
+  ha-card-border-width: "0px"
+  ha-card-border-color: "var(--divider-color)"
+  paper-card-header-color: "var(--primary-text-color)"
+  paper-card-background-color: "var(--secondary-background-color)"
+
+  # HA Layout Gaps (Fix voor geneste kaarten & Bubble Cards)
+  grid-card-gap: "8px"
+  stack-card-gap: "8px"
+  vertical-stack-card-gap: "8px"
+  horizontal-stack-card-gap: "8px"
+
+  # HA Sections View Gaps (Fix voor de gaten op de Home Tab)
+  ha-view-sections-row-gap: "8px"
+  ha-view-sections-column-gap: "8px"
+  ha-view-sections-margin: "0px"
+
+  #--------------------------------------------------
+  #-- Iconen & Badges --#
+  #--------------------------------------------------
+  paper-item-icon-color: "var(--secondary-text-color)"
+  paper-item-icon-active-color: "var(--primary-text-color)"
+  state-icon-color: "var(--paper-item-icon-color)"
+  state-icon-active-color: "var(--primary-text-color)"
+  label-badge-background-color: "var(--secondary-background-color)"
+  label-badge-text-color: "var(--primary-text-color)"
+  paper-icon-button-active-color: "var(--active-state-color)"
+  paper-icon-button-color: "var(--secondary-text-color)"
+  icon-color: "var(--secondary-text-color)"
+  icon-active-color: "var(--primary-text-color)"
+
+  #--------------------------------------------------
+  #-- Knoppen & Schakelaars --#
+  #--------------------------------------------------
+  paper-slider-knob-color: "var(--active-state-color)"
+  paper-slider-active-color: "var(--active-state-color)"
+  paper-slider-pin-color: "var(--active-state-color)"
+  paper-slider-secondary-color: "var(--divider-color)"
+  paper-toggle-button-checked-button-color: "var(--active-state-color)"
+  paper-toggle-button-checked-bar-color: "rgba(249, 171, 0, 0.1)"
+  paper-toggle-button-unchecked-button-color: "#999999"
+  paper-toggle-button-unchecked-bar-color: "rgba(255, 255, 255, 0.1)"
+  switch-checked-color: "var(--active-state-color)"
+  switch-unchecked-color: "#999999"
+  button-primary-color: "var(--primary-color)"
+  button-text-color: "var(--primary-text-color)"
+
+  #--------------------------------------------------
+  #-- Input Velden, Dropdowns & MDC Fixes --#
+  #--------------------------------------------------
+  # MD3 Fixes voor de "hard wit" bug in invoervelden en dropdowns
+  ha-color-form-background: "rgba(22, 22, 22, 0.8)"
+  ha-color-form-background-hover: "rgba(22, 22, 22, 0.6)"
+  ha-color-form-background-disabled: "rgba(22, 22, 22, 0.3)"
+  md-sys-color-surface: "var(--secondary-background-color)"
+  md-sys-color-surface-variant: "var(--primary-background-color)"
+  md-sys-color-on-surface: "var(--primary-text-color)"
+  md-sys-color-on-surface-variant: "var(--secondary-text-color)"
+  
+  input-fill-color: "rgba(22, 22, 22, 0.8)"
+  input-ink-color: "var(--primary-text-color)"
+  input-label-color: "var(--secondary-text-color)"
+  input-label-ink-color: "var(--secondary-text-color)"
+  input-border-color: "var(--divider-color)"
+  input-idle-line-color: "var(--divider-color)"
+  input-active-border-color: "var(--primary-color)"
+
+  input-dropdown-color: "var(--primary-text-color)"
+  input-dropdown-icon-color: "var(--primary-color)"
+
+  input-disabled-fill-color: "var(--secondary-background-color)"
+  input-disabled-ink-color: "var(--disabled-text-color)"
+
+  # Material Design 3 specifieke formuliervelden
+  mdc-theme-surface: "var(--secondary-background-color)"
+  mdc-theme-on-surface: "var(--primary-text-color)"
+
+  mdc-text-field-fill-color: "var(--input-fill-color)"
+  mdc-text-field-ink-color: "var(--input-ink-color)"
+  mdc-text-field-label-ink-color: "var(--input-label-ink-color)"
+  mdc-text-field-idle-line-color: "var(--divider-color)"
+
+  mdc-select-fill-color: "var(--input-fill-color)"
+  mdc-select-ink-color: "var(--input-ink-color)"
+  mdc-select-label-ink-color: "var(--input-label-ink-color)"
+  mdc-select-dropdown-icon-color: "var(--primary-color)"
+  mdc-select-idle-line-color: "var(--divider-color)"
+
+  paper-listbox-background-color: "var(--primary-background-color)"
+  paper-listbox-color: "var(--primary-text-color)"
+
+  #--------------------------------------------------
+  #-- Codering & Markdown --#
+  #--------------------------------------------------
+  markdown-code-background-color: "var(--secondary-background-color)"
+
+  #--------------------------------------------------
+  #-- Bubble Card Styling Overrides --#
+  #--------------------------------------------------
+  bubble-border-radius: "16px"
+  bubble-main-background-color: "var(--secondary-background-color)"
+  bubble-pop-up-main-background-color: "rgba(0, 0, 0, 0.0)"
+  bubble-accent-color: "var(--active-state-color)"
+  bubble-icon-background-color: "rgba(255, 255, 255, 0.1)"
+  bubble-select-list-background-color: "var(--secondary-background-color)"
+  bubble-horizontal-buttons-stack-background-color: "var(--secondary-background-color)"
+  bubble-horizontal-buttons-stack-border-radius: "16px"
+
+  #--------------------------------------------------
+  #-- Overschrijven van Material Design 3 Kleuren --#
+  #--------------------------------------------------
+  ha-color-primary: "var(--primary-color)"
+  ha-color-primary-40: "var(--primary-color)"
+  ha-color-primary-50: "var(--light-primary-color)"
+  ha-color-primary-60: "var(--light-primary-color)"
+  ha-color-primary-80: "var(--light-primary-color)"
+  ha-color-primary-90: "#d9ecec" # Zeer lichte aqua tint voor highlights
+
+  ha-color-accent: "var(--active-state-color)"
+  ha-color-orange-40: "var(--active-state-color)"
+  ha-color-orange-50: "var(--active-state-color)"
+  ha-color-orange-60: "var(--active-state-color)"
+
+  ha-color-text-primary: "var(--primary-text-color)"
+  ha-color-text-secondary: "var(--secondary-text-color)"
+  ha-color-text-disabled: "var(--disabled-text-color)"
+
+  ha-selected-menu-item-icon-color: "var(--primary-color)"
+  ha-selected-menu-item-text-color: "var(--primary-text-color)"

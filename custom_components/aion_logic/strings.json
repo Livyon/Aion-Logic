@@ -1,0 +1,239 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Aion Logic™ Activeren",
+                "description": "Voer uw licentiecode in om te starten.",
+                "data": {
+                    "activation_code": "Activatiecode"
+                }
+            },
+            "quick_start": {
+                "title": "Welkom Thuis 🏠",
+                "description": "Laten we de basis instellen zodat Aion Logic direct kan beginnen.",
+                "data": {
+                    "weather_entity": "Welke weersvoorspelling (Entity) gebruiken we?",
+                    "person_entities": "Wie woont hier? (Personen)"
+                }
+            }
+        },
+        "error": {
+            "invalid_auth": "Ongeldige activatiecode.",
+            "cannot_connect": "Kan geen verbinding maken met de Gateway.",
+            "unknown": "Onverwachte fout."
+        },
+        "abort": {
+            "already_configured": "Aion Logic draait al."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Aion Logic™ Instellingen",
+                "description": "Actief Pakket: **{license_status}**\n\nKies een categorie om te configureren:",
+                "menu_options": {
+                    "general": "⚙️ Algemeen, Personen & Tijden",
+                    "entities": "🔌 Sensoren & Verbindingen",
+                    "area_selection": "🏠 Ruimtes Configureren",
+                    "setpoints": "🌡️ Setpoint Profielen",
+                    "lifestyle": "💡 Lifestyle & Sfeer",
+                    "air_quality": "🍃 Luchtkwaliteit & Ventilatie",
+                    "safety": "Stap 10: 🛡️ Veiligheid & Active Guardian",
+                    "drivers": "🚗 Auto's & Onderweg",
+                    "energy": "⚡ Energie Optimalisatie",
+                    "fallback": "🛡️ Noodloop (Fallback)"
+                }
+            },
+            "general": {
+                "title": "Algemeen & Personen",
+                "description": "Beheer tijden, het lerend vermogen en wie er woont.",
+                "data": {
+                    "proactive_target_time": "Doeltijd Ochtend (Klaar om)",
+                    "night_start_time": "Starttijd Nachtmodus",
+                    "minutes_per_degree": "Minuten per graad (Startwaarde)",
+                    "person_entities": "Bewoners (Home Assistant Users)",
+                    "presence_sensors": "Extra Sensoren (Tags/Deurcontacten)",
+                    "enable_pet_mode": "🐾 Huisdiermodus (Negeer bewegingsmelders voor globale afwezigheid)",
+                    "early_bird_sensors": "Early Bird Triggers (Welke lampen of sensoren wijzen op vroege ontwaking?)",
+                    "early_bird_window": "Early Bird Window (Hoeveel minuten vóór de wekker mag dit het alarm al afzetten?)"
+                }
+            },
+            "entities": {
+                "title": "Sensoren & Verbindingen",
+                "description": "Koppel de hardware en sensoren.",
+                "data": {
+                    "weather_entity": "Weerbericht (Met.no / Buienradar)",
+                    "systeem_keuze_direct": "Type Verwarming",
+                    "home_wifi_ssid": "Thuis Wi-Fi Naam (SSID)",
+                    "wifi_tracker_sensors": "Wi-Fi Sensoren (Telefoons)",
+                    "family_calendar_entity": "Welke agenda moet Aion Logic tonen op het dashboard?",
+                    "travel_time_sensor": "Reistijd Sensor (Waze/Google)"
+                }
+            },
+            "area_selection": {
+                "title": "Ruimte Selectie",
+                "description": "Kies een ruimte om te configureren. (✅ = Reeds ingesteld)",
+                "data": {
+                    "selected_area": "Selecteer Ruimte"
+                }
+            },
+            "edit_area": {
+                "title": "Ruimte Configureren",
+                "description": "Instellingen voor {area_name}.",
+                "data": {
+                    "zone_name": "Naam van de Zone",
+                    "climate_entities": "Thermostaat(en) - Selecteer de hoofdthermostaat als EERSTE",
+                    "lighting_entities": "Lichten (Voor Kill-Switch)",
+                    "motion_sensors": "🏃‍♂️ Bewegingssensoren (Lokaal Licht & Slimme Aanwezigheid)",
+                    "motion_lights": "💡 Bewegings-Lichten (Optioneel: Welke lampen reageren op de melder?)",
+                    "motion_auto_on": "💡 Automatisch AAN? (Zet uit om de melder enkel als slimme uitschakel-timer te gebruiken)",
+                    "motion_only_when_dark": "🌙 Alleen als het donker is? (Gebruikt de stand van de zon, ideaal voor ruimtes met ramen)",
+                    "motion_timer": "⏱️ Timer: Licht automatisch uit na (minuten)",
+                    "window_sensors": "Raam/Deur Sensoren",
+                    "enable_boost": "Sta Boost toe in deze kamer?",
+                    "day_start": "Dag begint om",
+                    "night_start": "Nacht begint om",
+                    "lookup_prefix": "Koppel aan Profiel (bv. Woonkamer/Kantoor)"
+                }
+            },
+            "setpoints": {
+                "title": "Setpoint Profielen",
+                "description": "Kies welk temperatuurprofiel u wilt wijzigen.",
+                "menu_options": {
+                    "sp_woonkamer": "Woonkamer & Leefruimte",
+                    "sp_eetkamer": "Eetkamer & Eethoek",
+                    "sp_keuken": "Keuken",
+                    "sp_kantoor": "Kantoor",
+                    "sp_badkamer": "Badkamer",
+                    "sp_berging": "Berging/Gang",
+                    "sp_sk1": "Slaapkamer 1",
+                    "sp_sk2": "Slaapkamer 2",
+                    "sp_sk3": "Slaapkamer 3"
+                }
+            },
+            "lifestyle": {
+                "title": "Lifestyle & Sfeer",
+                "description": "Wat moet er gebeuren op de 4 sleutelmomenten?\n💡 **Tip:** Als u een Scene selecteert, negeert Aion Logic de losse lampen en helderheid voor dat moment.",
+                "data": {
+                    "ls_coming_home_on": "🏠 Thuiskomst: Lichten AAN",
+                    "ls_coming_home_brightness": "🏠 Thuiskomst: Helderheid (Indien lampen geselecteerd)",
+                    "ls_coming_home_scene": "🏠 Thuiskomst: OF start een Scene",
+                    "ls_coming_home_auto": "Welke eigen automatiseringen starten bij thuiskomst?",
+                    
+                    "ls_leaving_home_off": "👋 Vertrek: Apparaten UIT",
+                    "ls_leaving_home_scene": "👋 Vertrek: OF start een Scene (bv. All-Off)",
+                    "ls_leaving_home_auto": "Welke eigen automatiseringen starten bij vertrek?",
+                    
+                    "ls_night_off": "🌙 Slapen: Apparaten UIT",
+                    "ls_night_off_scene": "🌙 Slapen: OF start een Scene (bv. Slaapstand)",
+                    
+                    "ls_night_on": "🌙 Slapen: Nachtlampen AAN",
+                    "ls_night_on_brightness": "🌙 Slapen: Helderheid Nachtlampen",
+                    "ls_night_on_scene": "🌙 Slapen: OF start een Scene (Nachtlicht)",
+                    "ls_night_auto": "Welke eigen automatiseringen starten bij het slapengaan?",
+                    
+                    "ls_morning_on": "☀️ Opstaan: Lichten AAN",
+                    "ls_morning_brightness": "☀️ Opstaan: Helderheid",
+                    "ls_morning_scene": "☀️ Opstaan: OF start een Scene",
+                    "ls_morning_auto": "Welke eigen automatiseringen starten bij het opstaan?",
+                    "ls_sun_check": "Zon-Check: Lichten bij thuiskomst alleen als het donker is"
+                }
+            },
+            "air_quality": {
+                "title": "Luchtkwaliteit & Ventilatie",
+                "description": "Configureer hoe Aion Logic de lucht in uw woning verfrist.",
+                "data": {
+                    "central_ventilation_unit": "Centrale Ventilatie Unit",
+                    "enable_humidity_control": "Automatische vochtigheidscorrectie (Boost)",
+                    "enable_night_ventilation": "Nachtventilatie (Stille modus tijdens slapen)"
+                }
+            },
+            "safety": {
+                "title": "Veiligheid & Active Guardian",
+                "description": "{warning_text}Configureer hier uw alarm en beveiligingsfuncties.",
+                "data": {
+                    "enable_native_guard": "🛡️ Native Guard: Automatisch beveiligen bij afwezigheid (Gebruikt raamsensoren)",
+                    "enable_native_night_guard": "🌙 Sleep Guard: Ramen beveiligen tijdens 'Nacht' scenario's (terwijl u slaapt)",
+                    "alarm_panel_entity": "Koppel Extern Alarm (Optioneel)",
+                    "defense_lights": "🚨 Active Defense: Lichten (Afschrikken)",
+                    "defense_speakers": "🚨 Active Defense: Kies speakers voor een luide sirene. Laat leeg voor een stil alarm.",
+                    "security_notify_service": "🚨 Wie waarschuwen? (Scheid meerdere services met een komma)",
+                    "smoke_sensors": "🔥 Brand: Rookmelders",
+                    "fire_lights": "🔥 Brand: Vluchtweg Verlichting (Gaat 100% AAN)",
+                    "fire_shutters": "🔥 Brand: Vluchtweg Rolluiken (Gaan OPEN)"
+                }
+            },
+            "drivers": {
+                "title": "Auto's & Onderweg",
+                "description": "{warning_text}Koppel bestuurders aan hun auto voor slimme detectie.",
+                "data": {
+                    "driver_1_name": "Naam Bestuurder 1",
+                    "driver_1_sensor": "Sensor Bestuurder 1",
+                    "driver_1_trigger": "Trigger Waarde",
+                    "driver_1_notify": "De volledige service naam voor pushberichten (bv. notify.mobile_app_....)",
+                    "driver_2_name": "Naam Bestuurder 2",
+                    "driver_2_sensor": "Sensor Bestuurder 2",
+                    "driver_2_trigger": "Trigger Waarde",
+                    "driver_2_notify": "De volledige service naam voor pushberichten (bv. notify.mobile_app_....)",
+                    "driver_outdoor_max": "Max. Buitentemperatuur (Auto-Notificatie)",
+                    "driver_indoor_max": "Max. Binnentemperatuur (Auto-Notificatie)",
+                    "alarm_message": "💬 Spraakbericht bij connectie met de auto (Optioneel)"
+                }
+            },
+            "energy": {
+                "title": "Energie Optimalisatie",
+                "description": "{warning_text}Verwarm extra bij goedkope energie of zonne-overschot.",
+                "data": {
+                    "energy_sensor": "Energie Sensor (Prijs/Solar)",
+                    "energy_tag_value": "Trigger Waarde (bv. 'low', 'on')"
+                }
+            },
+            "fallback": {
+                "title": "Noodloop",
+                "description": "Veiligheidssysteem bij internetstoring.",
+                "data": {
+                    "fallback_temp": "Noodtemperatuur (°C)"
+                }
+            },
+            "sp_woonkamer": {
+                "title": "Profiel: Woonkamer",
+                "data": {
+                    "temp_woonkamer_afwezig": "Afwezig",
+                    "temp_woonkamer_voorverwarming": "Voorverwarming",
+                    "temp_woonkamer_dag_fris": "Dag: Fris",
+                    "temp_woonkamer_dag_koud": "Dag: Koud (Vorst)",
+                    "temp_woonkamer_dag_mild_warm": "Dag: Mild/Warm (Lente)",
+                    "temp_woonkamer_nacht_fris": "Nacht: Fris",
+                    "temp_woonkamer_nacht_koud": "Nacht: Koud",
+                    "temp_woonkamer_nacht_mild_warm": "Nacht: Mild/Warm"
+                }
+            },
+            "sp_eetkamer": {
+                "title": "Profiel: Eetkamer",
+                "data": {
+                    "temp_eetkamer_afwezig": "Afwezig",
+                    "temp_eetkamer_voorverwarming": "Voorverwarming",
+                    "temp_eetkamer_dag_fris": "Dag: Fris",
+                    "temp_eetkamer_dag_koud": "Dag: Koud (Vorst)",
+                    "temp_eetkamer_dag_mild_warm": "Dag: Mild/Warm (Lente)",
+                    "temp_eetkamer_nacht_fris": "Nacht: Fris",
+                    "temp_eetkamer_nacht_koud": "Nacht: Koud",
+                    "temp_eetkamer_nacht_mild_warm": "Nacht: Mild/Warm"
+                }
+            },
+            "sp_kantoor": {
+                "title": "Profiel: Kantoor",
+                "data": {
+                    "temp_kantoor_afwezig": "Afwezig",
+                    "temp_kantoor_voorverwarming": "Voorverwarming",
+                    "temp_kantoor_dag_fris": "Dag: Fris",
+                    "temp_kantoor_dag_koud": "Dag: Koud",
+                    "temp_kantoor_dag_mild_warm": "Dag: Mild/Warm",
+                    "temp_kantoor_nacht_fris": "Nacht: Fris",
+                    "temp_kantoor_nacht_koud": "Nacht: Koud",
+                    "temp_kantoor_nacht_mild_warm": "Nacht: Mild/Warm"
+                }
+            }
+        }
+    }
+}

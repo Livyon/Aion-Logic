@@ -1,0 +1,23 @@
+PROPRIETARY SOFTWARE LICENSE AGREEMENT
+
+Copyright (c) 2025 - 2026 Core Automations. All Rights Reserved.
+
+1. OWNERSHIP & COPYRIGHT
+This software package ("Aion Logic Integration"), including all source code, documentation, logic, assets, and associated files, is the exclusive property of Core Automations. The intellectual and technical concepts contained herein are proprietary to Core Automations and are protected by Belgian and international copyright laws and trade secret provisions.
+
+2. GRANT OF LICENSE
+Permission is hereby granted to download and install a copy of this software (the "Software") solely for personal, non-commercial use within a local Home Assistant environment. The functional use of this Software is STRICTLY SUBJECT TO the possession of a valid, active subscription or Activation Code issued by Core Automations. 
+
+3. RESTRICTIONS
+You may NOT:
+(a) Distribute, sublicense, lease, rent, loan, or sell the Software or any part thereof.
+(b) Redistribute, republish, or mirror the Software in any public or private repository without explicit written consent from Core Automations, nor present it as your own work.
+(c) Modify, decompile, disassemble, reverse engineer, or create derivative works based on the Software.
+(d) Intercept, monitor, or reverse engineer the API communications between the Software and the Core Automations Cloud Services.
+(e) Bypass, alter, or attempt to bypass the Activation Code verification mechanism contained within the Software or the Cloud Gateway logic.
+
+4. ACTIVATION & CLOUD SERVICES
+Use of this Software fundamentally requires an active connection to Core Automations Cloud Services. Access to these services is conditional upon a valid subscription or license purchase. Core Automations reserves the right to immediately terminate access to Cloud Services and revoke the license for any user found in violation of this Agreement, without prior notice or refund.
+
+5. DISCLAIMER OF WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

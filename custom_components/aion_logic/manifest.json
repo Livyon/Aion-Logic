@@ -1,0 +1,12 @@
+{
+    "domain": "aion_logic",
+    "name": "Aion Logic",
+    "codeowners": ["@Livyon"],
+    "config_flow": true,
+    "dependencies": ["http"],
+    "documentation": "https://sites.google.com/view/core-automations/setup",
+    "iot_class": "cloud_polling",
+    "issue_tracker": "https://sites.google.com/view/core-automations/over-ons-contact",
+    "requirements": ["requests"],
+    "version": "2.4.2"
+}

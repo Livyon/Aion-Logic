@@ -1,0 +1,239 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Activate Aion Logic™",
+                "description": "Enter your license code to get started.",
+                "data": {
+                    "activation_code": "Activation Code"
+                }
+            },
+            "quick_start": {
+                "title": "Welcome Home 🏠",
+                "description": "Let's set up the basics so Aion Logic can start immediately.",
+                "data": {
+                    "weather_entity": "Which weather forecast (Entity) should we use?",
+                    "person_entities": "Who lives here? (People)"
+                }
+            }
+        },
+        "error": {
+            "invalid_auth": "Invalid activation code.",
+            "cannot_connect": "Unable to connect to the Gateway.",
+            "unknown": "Unexpected error."
+        },
+        "abort": {
+            "already_configured": "Aion Logic is already running."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Aion Logic™ Settings",
+                "description": "Active Package: **{license_status}**\n\nChoose a category to configure:",
+                "menu_options": {
+                    "general": "⚙️ General, People & Times",
+                    "entities": "🔌 Sensors & Connections",
+                    "area_selection": "🏠 Configure Rooms",
+                    "setpoints": "🌡️ Setpoint Profiles",
+                    "lifestyle": "💡 Lifestyle & Ambiance",
+                    "air_quality": "🍃 Air Quality & Ventilation",
+                    "safety": "Step 10: 🛡️ Safety & Active Guardian",
+                    "drivers": "🚗 Cars & Commute",
+                    "energy": "⚡ Energy Optimization",
+                    "fallback": "🛡️ Emergency Mode (Fallback)"
+                }
+            },
+            "general": {
+                "title": "General & People",
+                "description": "Manage schedules, learning capacity, and residents.",
+                "data": {
+                    "proactive_target_time": "Morning Target Time (Ready by)",
+                    "night_start_time": "Night Mode Start Time",
+                    "minutes_per_degree": "Minutes per degree (Initial value)",
+                    "person_entities": "Residents (Home Assistant Users)",
+                    "presence_sensors": "Additional Sensors (Tags/Door contacts)",
+                    "enable_pet_mode": "🐾 Pet Mode (Ignore motion sensors when away)",
+                    "early_bird_sensors": "Early Bird Triggers (Which lights or sensors indicate early waking?)",
+                    "early_bird_window": "Early Bird Window (Minutes before alarm allowed to disable it?)"
+                }
+            },
+            "entities": {
+                "title": "Sensors & Connections",
+                "description": "Connect the hardware and sensors.",
+                "data": {
+                    "weather_entity": "Weather Forecast (Met.no / Buienradar)",
+                    "systeem_keuze_direct": "Heating Type",
+                    "home_wifi_ssid": "Home Wi-Fi Name (SSID)",
+                    "wifi_tracker_sensors": "Wi-Fi Sensors (Phones)",
+                    "family_calendar_entity": "Which calendar should Aion Logic show on the dashboard?",
+                    "travel_time_sensor": "Travel Time Sensor (Waze/Google)"
+                }
+            },
+            "area_selection": {
+                "title": "Area Selection",
+                "description": "Choose a room to configure. (✅ = Already configured)",
+                "data": {
+                    "selected_area": "Select Area"
+                }
+            },
+            "edit_area": {
+                "title": "Configure Area",
+                "description": "Settings for {area_name}.",
+                "data": {
+                    "zone_name": "Zone Name",
+                    "climate_entities": "Thermostat(s) - Select the primary thermostat FIRST",
+                    "lighting_entities": "Lights (For Kill-Switch)",
+                    "motion_sensors": "🏃‍♂️ Motion Sensors (Local Light & Smart Presence)",
+                    "motion_lights": "💡 Motion Lights (Optional: Which lights respond to the sensor?)",
+                    "motion_auto_on": "💡 Auto-ON? (Disable to use the sensor as a smart off-timer only)",
+                    "motion_only_when_dark": "🌙 Only when dark? (Uses sun position, ideal for rooms with windows)",
+                    "motion_timer": "⏱️ Timer: Auto-off lights after (minutes)",
+                    "window_sensors": "Window/Door Sensors",
+                    "enable_boost": "Allow Boost in this room?",
+                    "day_start": "Day starts at",
+                    "night_start": "Night starts at",
+                    "lookup_prefix": "Link to Profile (e.g., Living Room/Office)"
+                }
+            },
+            "setpoints": {
+                "title": "Setpoint Profiles",
+                "description": "Choose which temperature profile you want to modify.",
+                "menu_options": {
+                    "sp_woonkamer": "Living Room & Lounge",
+                    "sp_eetkamer": "Dining Room & Area",
+                    "sp_keuken": "Kitchen",
+                    "sp_kantoor": "Office",
+                    "sp_badkamer": "Bathroom",
+                    "sp_berging": "Storage/Hallway",
+                    "sp_sk1": "Bedroom 1",
+                    "sp_sk2": "Bedroom 2",
+                    "sp_sk3": "Bedroom 3"
+                }
+            },
+            "lifestyle": {
+                "title": "Lifestyle & Ambiance",
+                "description": "What should happen during the 4 key moments?\n💡 **Tip:** If you select a Scene, Aion Logic ignores individual lights and brightness for that moment.",
+                "data": {
+                    "ls_coming_home_on": "🏠 Coming Home: Lights ON",
+                    "ls_coming_home_brightness": "🏠 Coming Home: Brightness (If lights selected)",
+                    "ls_coming_home_scene": "🏠 Coming Home: OR start a Scene",
+                    "ls_coming_home_auto": "Which custom automations start upon arrival?",
+                    
+                    "ls_leaving_home_off": "👋 Leaving: Devices OFF",
+                    "ls_leaving_home_scene": "👋 Leaving: OR start a Scene (e.g., All-Off)",
+                    "ls_leaving_home_auto": "Which custom automations start upon departure?",
+                    
+                    "ls_night_off": "🌙 Sleep: Devices OFF",
+                    "ls_night_off_scene": "🌙 Sleep: OR start a Scene (e.g., Sleep Mode)",
+                    
+                    "ls_night_on": "🌙 Sleep: Night Lights ON",
+                    "ls_night_on_brightness": "🌙 Sleep: Night Light Brightness",
+                    "ls_night_on_scene": "🌙 Sleep: OR start a Scene (Night Light)",
+                    "ls_night_auto": "Which custom automations start when going to bed?",
+                    
+                    "ls_morning_on": "☀️ Waking Up: Lights ON",
+                    "ls_morning_brightness": "☀️ Waking Up: Brightness",
+                    "ls_morning_scene": "☀️ Waking Up: OR start a Scene",
+                    "ls_morning_auto": "Which custom automations start upon waking up?",
+                    "ls_sun_check": "Sun-Check: Only turn on lights when coming home if it's dark"
+                }
+            },
+            "air_quality": {
+                "title": "Air Quality & Ventilation",
+                "description": "Configure how Aion Logic refreshes the air in your home.",
+                "data": {
+                    "central_ventilation_unit": "Central Ventilation Unit",
+                    "enable_humidity_control": "Automatic humidity correction (Boost)",
+                    "enable_night_ventilation": "Night ventilation (Silent mode during sleep)"
+                }
+            },
+            "safety": {
+                "title": "Safety & Active Guardian",
+                "description": "{warning_text}Configure your alarm and security features here.",
+                "data": {
+                    "enable_native_guard": "🛡️ Native Guard: Auto-secure when away (Uses window sensors)",
+                    "enable_native_night_guard": "🌙 Sleep Guard: Secure windows during 'Night' scenarios (while you sleep)",
+                    "alarm_panel_entity": "Link External Alarm (Optional)",
+                    "defense_lights": "🚨 Active Defense: Lights (Deterrent)",
+                    "defense_speakers": "🚨 Active Defense: Select speakers for a loud siren. Leave empty for a silent alarm.",
+                    "security_notify_service": "🚨 Who to notify? (Separate multiple services with a comma)",
+                    "smoke_sensors": "🔥 Fire: Smoke Detectors",
+                    "fire_lights": "🔥 Fire: Escape Route Lighting (Turns 100% ON)",
+                    "fire_shutters": "🔥 Fire: Escape Route Shutters (Will OPEN)"
+                }
+            },
+            "drivers": {
+                "title": "Cars & Commute",
+                "description": "{warning_text}Link drivers to their cars for smart detection.",
+                "data": {
+                    "driver_1_name": "Driver 1 Name",
+                    "driver_1_sensor": "Driver 1 Sensor",
+                    "driver_1_trigger": "Trigger Value",
+                    "driver_1_notify": "Full service name for push notifications (e.g., notify.mobile_app_....)",
+                    "driver_2_name": "Driver 2 Name",
+                    "driver_2_sensor": "Driver 2 Sensor",
+                    "driver_2_trigger": "Trigger Value",
+                    "driver_2_notify": "Full service name for push notifications (e.g., notify.mobile_app_....)",
+                    "driver_outdoor_max": "Max. Outdoor Temp (Auto-Notification)",
+                    "driver_indoor_max": "Max. Indoor Temp (Auto-Notification)",
+                    "alarm_message": "💬 Voice message when connecting to car (Optional)"
+                }
+            },
+            "energy": {
+                "title": "Energy Optimization",
+                "description": "{warning_text}Apply extra heating during cheap energy hours or solar surplus.",
+                "data": {
+                    "energy_sensor": "Energy Sensor (Price/Solar)",
+                    "energy_tag_value": "Trigger Value (e.g., 'low', 'on')"
+                }
+            },
+            "fallback": {
+                "title": "Emergency Mode",
+                "description": "Safety system for internet outages.",
+                "data": {
+                    "fallback_temp": "Emergency Temperature (°C)"
+                }
+            },
+            "sp_woonkamer": {
+                "title": "Profile: Living Room",
+                "data": {
+                    "temp_woonkamer_afwezig": "Away",
+                    "temp_woonkamer_voorverwarming": "Pre-heating",
+                    "temp_woonkamer_dag_fris": "Day: Fresh",
+                    "temp_woonkamer_dag_koud": "Day: Cold (Frost)",
+                    "temp_woonkamer_dag_mild_warm": "Day: Mild/Warm (Spring)",
+                    "temp_woonkamer_nacht_fris": "Night: Fresh",
+                    "temp_woonkamer_nacht_koud": "Night: Cold",
+                    "temp_woonkamer_nacht_mild_warm": "Night: Mild/Warm"
+                }
+            },
+            "sp_eetkamer": {
+                "title": "Profile: Dining Room",
+                "data": {
+                    "temp_eetkamer_afwezig": "Away",
+                    "temp_eetkamer_voorverwarming": "Pre-heating",
+                    "temp_eetkamer_dag_fris": "Day: Fresh",
+                    "temp_eetkamer_dag_koud": "Day: Cold (Frost)",
+                    "temp_eetkamer_dag_mild_warm": "Day: Mild/Warm (Spring)",
+                    "temp_eetkamer_nacht_fris": "Night: Fresh",
+                    "temp_eetkamer_nacht_koud": "Night: Cold",
+                    "temp_eetkamer_nacht_mild_warm": "Night: Mild/Warm"
+                }
+            },
+            "sp_kantoor": {
+                "title": "Profile: Office",
+                "data": {
+                    "temp_kantoor_afwezig": "Away",
+                    "temp_kantoor_voorverwarming": "Pre-heating",
+                    "temp_kantoor_dag_fris": "Day: Fresh",
+                    "temp_kantoor_dag_koud": "Day: Cold",
+                    "temp_kantoor_dag_mild_warm": "Day: Mild/Warm",
+                    "temp_kantoor_nacht_fris": "Night: Fresh",
+                    "temp_kantoor_nacht_koud": "Night: Cold",
+                    "temp_kantoor_nacht_mild_warm": "Night: Mild/Warm"
+                }
+            }
+        }
+    }
+}
