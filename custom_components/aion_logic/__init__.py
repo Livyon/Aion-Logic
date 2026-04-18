@@ -1249,8 +1249,14 @@ class AionLogicCoordinator:
         if "config" in override_data:
             real_payload["config"].update(override_data["config"])
             
-        # Voeg context toe dat dit een simulatie is
-        real_payload["simulation"] = "SHADOW_RUN"
+        # --- DYNAMISCHE SCENARIO INJECTIE (Doorgeefluik) ---
+        if "simulation" in override_data:
+            real_payload["simulation"] = override_data["simulation"]
+        else:
+            real_payload["simulation"] = "SHADOW_RUN" # Fallback voor oude knoppen
+            
+        if "state_overlay" in override_data:
+            real_payload["state_overlay"] = override_data["state_overlay"]
 
         # 3. Stuur naar de Cloud (Echte test van verbinding!)
         try:
