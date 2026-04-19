@@ -161,6 +161,16 @@ class AionLogicCoordinator:
         if old_state and old_state.state != new_state.state:
             # --- Ghost Bounce Tracker ---
             if new_state.state != "home" and old_state.state == "home":
+
+                if "gps_accuracy" in new_state.attributes:
+                    try:
+                        gps_acc = float(new_state.attributes.get("gps_accuracy", 0))
+                        if gps_acc > 100:
+                            _LOGGER.warning(f"🛡️ GPS Drift Guard: Negeer vals vertrek '{entity_id}' wegens slechte GPS ({gps_acc}m).")
+                            return
+                    except (ValueError, TypeError):
+                        pass
+                
                 self._person_departure_time[entity_id] = dt_util.utcnow()
 
                                 
@@ -563,6 +573,18 @@ class AionLogicCoordinator:
                 # --- Ghost Window ---
                 eff_state = state_obj.state
                 is_ghost_masked = False
+
+                if eff_state != "home":
+                    try:
+                        gps_acc = float(state_obj.attributes.get("gps_accuracy", 0))
+                        if gps_acc > 100:
+                            if not departed_at:
+                                _LOGGER.debug(f"🛡️ GPS Drift Masker: {entity_id} gemaskeerd naar 'home' (Slechte GPS: {gps_acc}m)")
+                                eff_state = "home"
+                                is_ghost_masked = True
+                    except (ValueError, TypeError):
+                        pass
+                
                 if eff_state != "home" and departed_at:
                     if (dt_util.utcnow() - departed_at).total_seconds() < (GHOST_WINDOW_SECONDS - 2):
                         _LOGGER.debug(f"👻 Ghost Window actief voor {entity_id}: Tussentijdse payload forceert status naar 'home'.")
