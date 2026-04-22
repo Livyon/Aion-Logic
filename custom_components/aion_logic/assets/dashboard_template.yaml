@@ -1,17 +1,18 @@
 views:
   - title: Home
     sections:
-      - "0":
+      - '0':
           type: vertical-stack
+          card_mod: null
           cards:
             - type: custom:bubble-card
               card_type: pop-up
-              hash: "#Security"
+              hash: '#Security'
               name: Beveiliging
               icon: mdi:shield-check
               margin_top_mobile: 56px
               button_type: name
-              auto_close: "30000"
+              auto_close: '30000'
             - type: custom:auto-entities
               card:
                 type: grid
@@ -41,7 +42,7 @@ views:
               filter:
                 include:
                   - domain: binary_sensor
-                    state: "on"
+                    state: 'on'
                     attributes:
                       device_class: window
                     options:
@@ -53,7 +54,7 @@ views:
                       styles: |
                         .bubble-icon { color: var(--error-color) !important; }
                   - domain: binary_sensor
-                    state: "on"
+                    state: 'on'
                     attributes:
                       device_class: door
                     options:
@@ -65,7 +66,7 @@ views:
                       styles: |
                         .bubble-icon { color: var(--error-color) !important; }
                   - domain: binary_sensor
-                    state: "on"
+                    state: 'on'
                     attributes:
                       device_class: motion
                     options:
@@ -165,30 +166,31 @@ views:
             card_type: separator
             name: Info & Planning
             icon: mdi:information-variant
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
           - type: grid
             columns: 2
             square: false
             cards:
-              - type: custom:auto-entities
-                card:
-                  type: grid
-                  columns: 1
-                  square: false
-                card_param: cards
-                filter:
-                  include:
-                    - domain: weather
-                      options:
-                        type: custom:bubble-card
-                        card_type: button
-                        button_type: state
-                        name: null
-                        show_state: true
-                        show_attribute: true
-                        attribute: temperature
-                        icon: mdi:weather-partly-cloudy
-                        scrolling_effect: false
-                show_empty: false
+              - type: custom:bubble-card
+                card_type: button
+                sub_button:
+                  main: []
+                  bottom: []
+                button_type: state
+                entity: weather.forecast_thuis
+                slider_fill_orientation: left
+                slider_value_position: right
+                scrolling_effect: false
+                show_name: true
+                show_state: true
+                show_last_changed: false
+                show_attribute: true
+                attribute: temperature
+                button_action: {}
+                card_layout: normal
               - type: custom:bubble-card
                 card_type: button
                 button_type: name
@@ -197,7 +199,13 @@ views:
                 button_action:
                   tap_action:
                     action: navigate
-                    navigation_path: "#Info"
+                    navigation_path: '#Info'
+                sub_button:
+                  main: []
+                  bottom: []
+                slider_fill_orientation: left
+                slider_value_position: right
+                card_layout: normal
                 card_mod:
                   style: |
                     .bubble-icon {
@@ -205,112 +213,277 @@ views:
                     }
           - type: vertical-stack
             cards:
-              - type: custom:bubble-card
-                card_type: pop-up
-                hash: "#Info"
-                name: Info Centrum
-                icon: mdi:information
-                margin_top_mobile: 56px
-                styles: |
-                  /* Target de container die alles afkapt */
-                  .bubble-pop-up-container {
-                    display: flex !important;
-                    flex-direction: column !important;
-                  }
+              - type: vertical-stack
+                cards:
+                  - type: custom:bubble-card
+                    card_type: pop-up
+                    hash: '#Info'
+                    name: Info Centrum
+                    icon: mdi:information
+                    margin_top_mobile: 56px
+                    styles: |
+                      /* Target de container die alles afkapt */
+                      .bubble-pop-up-container {
+                        display: flex !important;
+                        flex-direction: column !important;
+                      }
 
-                  /* Forceer de interne scroll-omgeving */
-                  .bubble-cards-stack {
-                    padding-bottom: 120px !important; /* Ruimte voor de onderste rij bolletjes */
-                    overflow-y: auto !important;
-                    overflow-x: hidden !important;
-                  }
+                      /* Forceer de interne scroll-omgeving */
+                      .bubble-cards-stack {
+                        padding-bottom: 120px !important; 
+                        overflow-y: auto !important;
+                        overflow-x: hidden !important;
+                      }
 
-                  /* Verwijder de harde limiet van de inner wrapper */
-                  .bubble-pop-up-inner {
-                    max-height: 85vh !important;
-                    overflow: visible !important;
-                  }
-                button_type: name
-                auto_close: "20000"
-                sub_button:
-                  main: []
-                  bottom: []
-                slider_fill_orientation: left
-                slider_value_position: right
-              - type: custom:bubble-card
-                card_type: separator
-                name: Status
-                icon: mdi:account-cog
-              - type: custom:auto-entities
-                card:
-                  type: grid
-                  columns: 1
-                  square: false
-                card_param: cards
-                filter:
-                  include:
-                    - entity_id: sensor.aion_logic_scenario
-                      options:
-                        type: custom:bubble-card
-                        card_type: button
-                        button_type: state
-                        name: Aion Scenario
-                        show_state: true
-                        sub_button: []
-                show_empty: false
-              - type: custom:auto-entities
-                card:
-                  type: glance
-                  show_name: false
-                  show_state: true
-                  show_icon: true
-                  columns: 4
-                filter:
-                  include:
-                    - domain: person
-                sort:
-                  method: name
-                show_empty: false
-              - type: custom:bubble-card
-                card_type: separator
-                name: Agenda
-                icon: mdi:calendar-clock
-                styles: |
-                  .bubble-line {
-                    opacity: 0.5;
-                  }
-              - type: custom:auto-entities
-                card:
-                  type: vertical-stack
-                card_param: cards
-                filter:
-                  template: |
-                    {% if states('calendar.aion_gezinsagenda') != 'unknown' %}
-                      [{
-                        "type": "calendar",
-                        "initial_view": "listWeek",
-                        "title": "Aankomende Afspraken",
-                        "entities": ["calendar.aion_gezinsagenda"],
-                        "card_mod": {
-                          "style": "ha-full-calendar { height: 500px !important; }"
-                        }
-                      }]
-                    {% else %}
-                      [{
-                        "type": "custom:bubble-card",
-                        "card_type": "button",
-                        "button_type": "name",
-                        "name": "Gezinsagenda niet geconfigureerd",
-                        "icon": "mdi:calendar-alert"
-                      }]
-                    {% endif %}
-                  include: []
+                      /* Verwijder de harde limiet van de inner wrapper */
+                      .bubble-pop-up-inner {
+                        max-height: 85vh !important;
+                        overflow: visible !important;
+                      }
+                    button_type: name
+                    auto_close: '20000'
+                    sub_button:
+                      main: []
+                      bottom: []
+                    slider_fill_orientation: left
+                    slider_value_position: right
+                    card_layout: normal
+                  - type: custom:bubble-card
+                    card_type: separator
+                    name: Status
+                    icon: mdi:account-cog
+                  - type: custom:auto-entities
+                    card:
+                      type: grid
+                      columns: 1
+                      square: false
+                    card_param: cards
+                    filter:
+                      include:
+                        - entity_id: sensor.aion_logic_scenario
+                          options:
+                            type: custom:bubble-card
+                            card_type: button
+                            button_type: state
+                            name: Aion Scenario
+                            show_state: true
+                            sub_button: []
+                    show_empty: false
+                  - type: custom:auto-entities
+                    card:
+                      type: glance
+                      show_name: false
+                      show_state: true
+                      show_icon: true
+                      columns: 4
+                    filter:
+                      include:
+                        - domain: person
+                    sort:
+                      method: name
+                    show_empty: false
+                  - type: custom:bubble-card
+                    card_type: separator
+                    name: Agenda
+                    icon: mdi:calendar-clock
+                    styles: |
+                      .bubble-line {
+                        opacity: 0.5;
+                      }
+                  - type: custom:auto-entities
+                    card:
+                      type: vertical-stack
+                    card_param: cards
+                    filter:
+                      template: >
+                        {% if states('calendar.aion_gezinsagenda') != 'unknown'
+                        %}
+                          [{
+                            "type": "calendar",
+                            "initial_view": "listWeek",
+                            "title": "Aankomende Afspraken",
+                            "entities": ["calendar.aion_gezinsagenda"],
+                            "card_mod": {
+                              "style": "ha-full-calendar { height: 500px !important; }"
+                            }
+                          }]
+                        {% else %}
+                          [{
+                            "type": "custom:bubble-card",
+                            "card_type": "button",
+                            "button_type": "name",
+                            "name": "Gezinsagenda niet geconfigureerd",
+                            "icon": "mdi:calendar-alert"
+                          }]
+                        {% endif %}
+                      include: []
+                  - type: custom:bubble-card
+                    card_type: separator
+                    name: Huishouden
+                    icon: mdi:home-analytics
+                  - type: custom:auto-entities
+                    card:
+                      type: grid
+                      columns: 1
+                      square: false
+                    card_param: cards
+                    filter:
+                      template: >
+                        {% set ns = namespace(found=false) %}
+
+                        {# 1. Zoek of er minstens één afval-sensor bestaat #}
+
+                        {% set keywords = ['recycleapp', 'afval', 'restafval',
+                        'pmd', 'gft', 'papier', 'glas'] %}
+
+                        {% for s in states.sensor %}
+                          {% if not ns.found %}
+                            {% for word in keywords %}
+                              {% if word in s.entity_id %}
+                                {% set ns.found = true %}
+                              {% endif %}
+                            {% endfor %}
+                          {% endif %}
+                        {% endfor %}
+
+                        {# 2. Als gevonden: Toon de knop #}
+
+                        {% if ns.found %}
+                          {{
+                            [
+                              {
+                                'type': 'custom:bubble-card',
+                                'card_type': 'button',
+                                'button_type': 'name',
+                                'name': 'Afvalophaling',
+                                'icon': 'mdi:trash-can-outline',
+                                'scrolling_effect': false,
+                                'button_action': {
+                                  'tap_action': {
+                                    'action': 'navigate',
+                                    'navigation_path': '#AfvalbeheerInfo'
+                                  }
+                                }
+                              }
+                            ]
+                          }}
+                        {% endif %}
+                    show_empty: false
+              - type: vertical-stack
+                cards:
+                  - type: custom:bubble-card
+                    card_type: pop-up
+                    hash: '#AfvalbeheerInfo'
+                    name: Afvalkalender
+                    icon: mdi:trash-can
+                    margin_top_mobile: 56px
+                  - type: custom:auto-entities
+                    card:
+                      type: grid
+                      columns: 1
+                      square: false
+                    card_param: cards
+                    filter:
+                      include:
+                        - options:
+                            type: custom:bubble-card
+                            card_type: button
+                            button_type: state
+                            show_icon: true
+                            scrolling_effect: false
+                            button_action:
+                              tap_action:
+                                action: more-info
+                          entity_id: '*restafval*'
+                        - options:
+                            type: custom:bubble-card
+                            card_type: button
+                            button_type: state
+                            show_icon: true
+                            scrolling_effect: false
+                            button_action:
+                              tap_action:
+                                action: more-info
+                          entity_id: '*pmd*'
+                        - options:
+                            type: custom:bubble-card
+                            card_type: button
+                            button_type: state
+                            show_icon: true
+                            scrolling_effect: false
+                            button_action:
+                              tap_action:
+                                action: more-info
+                          entity_id: '*papier*'
+                        - options:
+                            type: custom:bubble-card
+                            card_type: button
+                            button_type: state
+                            show_icon: true
+                            scrolling_effect: false
+                            button_action:
+                              tap_action:
+                                action: more-info
+                          entity_id: '*gft*'
+                        - options:
+                            type: custom:bubble-card
+                            card_type: button
+                            button_type: state
+                            show_icon: true
+                            scrolling_effect: false
+                            button_action:
+                              tap_action:
+                                action: more-info
+                          entity_id: '*glas*'
+                        - options:
+                            type: custom:bubble-card
+                            card_type: button
+                            button_type: state
+                            show_icon: true
+                            scrolling_effect: false
+                            button_action:
+                              tap_action:
+                                action: more-info
+                          entity_id: '*recycleapp*'
+                      exclude:
+                        - options: {}
+                          state: unavailable
+                        - options: {}
+                          state: unknown
+                        - options: {}
+                          state: Geen
+                        - options: {}
+                          state: 'off'
+                        - options: {}
+                          entity_id: '*vandaag*'
+                        - options: {}
+                          entity_id: '*morgen*'
+                        - options: {}
+                          entity_id: '*eerstvolgende*'
+                        - options: {}
+                          entity_id: '*first_next*'
+                        - options: {}
+                          entity_id: '*datums*'
+                        - options: {}
+                          entity_id: '*dates*'
+                        - options: {}
+                          entity_id: '*picture*'
+                        - options: {}
+                          entity_id: '*event*'
+                    unique: true
+                    sort:
+                      method: state
+                    show_empty: false
       - type: grid
         cards:
           - type: custom:bubble-card
             card_type: separator
             name: Beveiliging
             icon: mdi:shield-home
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
           - type: custom:auto-entities
             show_empty: false
             card:
@@ -334,7 +507,7 @@ views:
                     button_action:
                       tap_action:
                         action: navigate
-                        navigation_path: "#security"
+                        navigation_path: '#security'
                   domain: alarm_control_panel
                 - entity_id: sensor.aion_guardian
                   options:
@@ -359,26 +532,27 @@ views:
                     button_action:
                       tap_action:
                         action: navigate
-                        navigation_path: "#security"
+                        navigation_path: '#security'
           - type: vertical-stack
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#security"
+                hash: '#security'
                 name: Beveiliging
                 icon: mdi:shield-check
                 margin_top: 20px
                 button_type: name
                 show_header: false
-                auto_close: "15000"
+                auto_close: '15000'
                 margin_top_mobile: 56px
-                bg_opacity: "0"
-                bg_blur: "0"
+                bg_opacity: '0'
+                bg_blur: '0'
                 sub_button:
                   main: []
                   bottom: []
                 slider_fill_orientation: left
                 slider_value_position: right
+                card_layout: normal
               - type: custom:auto-entities
                 show_empty: false
                 card:
@@ -433,6 +607,38 @@ views:
                           .bubble-icon {
                             color: ${state === 'Veilig' ? 'var(--success-color)' : (state === 'GEVAAR' ? 'var(--error-color)' : 'var(--warning-color)')} !important;
                           }
+                    - entity_id: switch.aion_logic_aion_guard_master
+                      options:
+                        type: custom:bubble-card
+                        card_type: button
+                        button_type: switch
+                        name: Guard Master
+                        icon: mdi:shield-lock
+                        show_state: false
+                        styles: |
+                          .bubble-button-background {
+                                        background: var(--bubble-secondary-background-color) !important;
+                                        opacity: 1 !important;
+                                      }
+                                      .bubble-icon {
+                                        color: ${state === 'on' ? 'var(--success-color)' : 'var(--state-icon-color)'} !important;
+                                      }
+                    - entity_id: switch.aion_logic_aion_guard_pauze
+                      options:
+                        type: custom:bubble-card
+                        card_type: button
+                        button_type: switch
+                        name: Guard Pauze (15 min)
+                        icon: mdi:pause-circle-outline
+                        show_state: false
+                        styles: |
+                          .bubble-button-background {
+                                        background: var(--bubble-secondary-background-color) !important;
+                                        opacity: 1 !important;
+                                      }
+                                      .bubble-icon {
+                                        color: ${state === 'on' ? 'var(--warning-color)' : 'var(--state-icon-color)'} !important;
+                                      }
       - type: grid
         cards:
           - type: custom:bubble-card
@@ -443,7 +649,11 @@ views:
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#Gang"
+                navigation_path: '#Gang'
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
             card_mod:
               style: |
                 .bubble-icon {
@@ -454,12 +664,16 @@ views:
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#Gang"
+                hash: '#Gang'
                 name: Gang Bediening
                 icon: mdi:stairs-up
                 margin_top_mobile: 56px
                 button_type: name
-                auto_close: "15000"
+                auto_close: '15000'
+                sub_button:
+                  main: []
+                  bottom: []
+                card_layout: normal
               - type: custom:auto-entities
                 card:
                   type: grid
@@ -641,7 +855,11 @@ views:
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#Woonkamer"
+                navigation_path: '#Woonkamer'
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
             card_mod:
               style: |
                 .bubble-icon {
@@ -652,12 +870,16 @@ views:
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#Woonkamer"
+                hash: '#Woonkamer'
                 name: Woonkamer Bediening
                 icon: mdi:sofa
                 margin_top_mobile: 56px
                 button_type: name
-                auto_close: "15000"
+                auto_close: '15000'
+                sub_button:
+                  main: []
+                  bottom: []
+                card_layout: normal
               - type: custom:auto-entities
                 card:
                   type: grid
@@ -839,7 +1061,11 @@ views:
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#Eetkamer"
+                navigation_path: '#Eetkamer'
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
             card_mod:
               style: |
                 .bubble-icon {
@@ -850,12 +1076,16 @@ views:
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#Eetkamer"
+                hash: '#Eetkamer'
                 name: Eetkamer Bediening
                 icon: mdi:table-furniture
                 margin_top_mobile: 56px
                 button_type: name
-                auto_close: "15000"
+                auto_close: '15000'
+                sub_button:
+                  main: []
+                  bottom: []
+                card_layout: normal
               - type: custom:auto-entities
                 card:
                   type: grid
@@ -1029,7 +1259,11 @@ views:
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#Keuken"
+                navigation_path: '#Keuken'
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
             card_mod:
               style: |
                 .bubble-icon {
@@ -1040,12 +1274,16 @@ views:
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#Keuken"
+                hash: '#Keuken'
                 name: Keuken Bediening
                 icon: mdi:chef-hat
                 margin_top_mobile: 56px
                 button_type: name
-                auto_close: "15000"
+                auto_close: '15000'
+                sub_button:
+                  main: []
+                  bottom: []
+                card_layout: normal
               - type: custom:auto-entities
                 card:
                   type: grid
@@ -1219,7 +1457,11 @@ views:
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#Badkamer"
+                navigation_path: '#Badkamer'
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
             card_mod:
               style: |
                 .bubble-icon {
@@ -1230,12 +1472,16 @@ views:
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#Badkamer"
+                hash: '#Badkamer'
                 name: Badkamer Bediening
                 icon: mdi:shower
                 margin_top_mobile: 56px
                 button_type: name
-                auto_close: "15000"
+                auto_close: '15000'
+                sub_button:
+                  main: []
+                  bottom: []
+                card_layout: normal
               - type: custom:auto-entities
                 card:
                   type: grid
@@ -1409,7 +1655,11 @@ views:
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#sk1"
+                navigation_path: '#sk1'
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
             card_mod:
               style: |
                 .bubble-icon {
@@ -1420,12 +1670,16 @@ views:
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#sk1"
+                hash: '#sk1'
                 name: Slaapkamer 1
                 icon: mdi:bed
                 margin_top_mobile: 56px
                 button_type: name
-                auto_close: "15000"
+                auto_close: '15000'
+                sub_button:
+                  main: []
+                  bottom: []
+                card_layout: normal
               - type: custom:auto-entities
                 card:
                   type: grid
@@ -1600,28 +1854,33 @@ views:
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#sk2"
+                navigation_path: '#sk2'
             sub_button:
               main: []
               bottom: []
             slider_fill_orientation: left
+            slider_value_position: right
+            card_layout: normal
             card_mod:
               style: |
                 .bubble-icon {
                       color: {{ 'var(--active-state-color)' if expand(area_entities('Slaapkamer 2')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else 'var(--state-icon-color)' }} !important;
                       opacity: {{ '1' if expand(area_entities('Slaapkamer 2')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else '0.5' }} !important;
                     }
-            slider_value_position: right
           - type: vertical-stack
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#sk2"
+                hash: '#sk2'
                 name: Slaapkamer 2
                 icon: mdi:bed
                 margin_top_mobile: 56px
                 button_type: name
-                auto_close: "15000"
+                auto_close: '15000'
+                sub_button:
+                  main: []
+                  bottom: []
+                card_layout: normal
               - type: custom:auto-entities
                 card:
                   type: grid
@@ -1791,12 +2050,16 @@ views:
           - type: custom:bubble-card
             card_type: button
             button_type: name
-            name: Hoofdslaapkamer
+            name: Slaapkamer Ouders
             icon: mdi:bed
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#hsk"
+                navigation_path: '#hsk'
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
             card_mod:
               style: |
                 .bubble-icon {
@@ -1807,12 +2070,16 @@ views:
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#hsk"
-                name: Hoofdslaapkamer
+                hash: '#hsk'
+                name: Slaapkamer 3
                 icon: mdi:bed
                 margin_top_mobile: 56px
                 button_type: name
-                auto_close: "15000"
+                auto_close: '15000'
+                sub_button:
+                  main: []
+                  bottom: []
+                card_layout: normal
               - type: custom:auto-entities
                 card:
                   type: grid
@@ -1822,7 +2089,7 @@ views:
                 filter:
                   include:
                     - domain: climate
-                      area: Hoofdslaapkamer
+                      area: Slaapkamer 3
                       options:
                         type: custom:bubble-card
                         card_type: climate
@@ -1840,8 +2107,8 @@ views:
                 card_param: cards
                 filter:
                   template: >
-                    {% set target_area = 'Hoofdslaapkamer' %}   {# <---
-                    AANPASSEN #}
+                    {% set target_area = 'Slaapkamer 3' %}   {# <--- AANPASSEN
+                    #}
                         {% set ns = namespace(cards=[]) %}
                         
                         {# DIT IS DE NIEUWE TRUC: We maken de JS code als tekst #}
@@ -1896,7 +2163,7 @@ views:
                 card_param: cards
                 filter:
                   template: |
-                    {% set target_area = 'Hoofdslaapkamer' %}
+                    {% set target_area = 'Slaapkamer 3' %}
                     {% set ns = namespace(cards=[]) %}
 
                     {% for cov in states.cover %}
@@ -1932,8 +2199,8 @@ views:
                 card_param: cards
                 filter:
                   template: >
-                    {% set target_area = 'Hoofdslaapkamer' %}  {# <--- HIER VUL
-                    JE DE NAAM IN #}
+                    {% set target_area = 'Slaapkamer 3' %}  {# <--- HIER VUL JE
+                    DE NAAM IN #}
 
                     {% set ns = namespace(cards=[]) %}
 
@@ -1987,12 +2254,13 @@ views:
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#Modi"
+                navigation_path: '#Modi'
             sub_button:
               main: []
               bottom: []
             slider_fill_orientation: left
             slider_value_position: right
+            card_layout: normal
             card_mod:
               style: |
                 .bubble-icon {
@@ -2003,15 +2271,16 @@ views:
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#Modi"
+                hash: '#Modi'
                 name: Huis Instellingen
                 icon: mdi:home-clock
                 margin_top_mobile: 56px
                 button_type: name
-                auto_close: "15000"
+                auto_close: '15000'
                 sub_button:
                   main: []
                   bottom: []
+                card_layout: normal
               - type: custom:bubble-card
                 card_type: separator
                 name: Aanwezigheid
@@ -2023,6 +2292,14 @@ views:
                 name: Gasten / Babysit Modus
                 icon: mdi:account-multiple-check
                 show_state: true
+                styles: |
+                  .bubble-button-background {
+                    background: var(--bubble-secondary-background-color) !important;
+                    opacity: 1 !important;
+                  }
+                  .bubble-icon {
+                    color: ${state === 'on' ? 'var(--active-state-color)' : 'var(--state-icon-color)'} !important;
+                  }
                 sub_button:
                   main:
                     - name: Houdt huis warm als bewoners weg zijn
@@ -2041,6 +2318,10 @@ views:
                 action: assist
                 pipeline_id: preferred
                 start_listening: true
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
       - type: grid
         cards:
           - type: custom:bubble-card
@@ -2051,7 +2332,11 @@ views:
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#Cameras"
+                navigation_path: '#Cameras'
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
             card_mod:
               style: |
                 .bubble-icon {
@@ -2061,13 +2346,17 @@ views:
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#Cameras"
+                hash: '#Cameras'
                 name: Live Beelden
                 icon: mdi:cctv
                 margin_top_mobile: 56px
                 width_desktop: 600px
                 button_type: name
-                auto_close: "20000"
+                auto_close: '20000'
+                sub_button:
+                  main: []
+                  bottom: []
+                card_layout: normal
               - type: custom:auto-entities
                 card:
                   type: grid
@@ -2082,7 +2371,7 @@ views:
                         show_state: false
                         show_name: true
                         camera_view: live
-                        aspect_ratio: "16:9"
+                        aspect_ratio: '16:9'
                         tap_action:
                           action: more-info
                         card_mod:
@@ -2099,7 +2388,7 @@ views:
                   button_type: name
                   name: Geen camera's gevonden
                   icon: mdi:camera-off
-                  styles: ".bubble-icon { opacity: 0.5; }"
+                  styles: '.bubble-icon { opacity: 0.5; }'
       - type: grid
         cards:
           - type: custom:bubble-card
@@ -2110,7 +2399,11 @@ views:
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#Media"
+                navigation_path: '#Media'
+            sub_button:
+              main: []
+              bottom: []
+            card_layout: normal
             card_mod:
               style: |
                 .bubble-icon {
@@ -2121,12 +2414,16 @@ views:
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#Media"
+                hash: '#Media'
                 name: Media Spelers
                 icon: mdi:cast-audio
                 margin_top_mobile: 56px
                 button_type: name
-                auto_close: "15000"
+                auto_close: '15000'
+                sub_button:
+                  main: []
+                  bottom: []
+                card_layout: normal
               - type: custom:bubble-card
                 card_type: separator
                 name: Nu aan het spelen
@@ -2162,7 +2459,7 @@ views:
                 filter:
                   include:
                     - domain: media_player
-                      state: "on"
+                      state: 'on'
                       options:
                         type: custom:bubble-card
                         card_type: media-player
@@ -2177,7 +2474,7 @@ views:
                         type: custom:bubble-card
                         card_type: media-player
                     - domain: media_player
-                      state: "off"
+                      state: 'off'
                       options:
                         type: custom:bubble-card
                         card_type: media-player
@@ -2185,13 +2482,20 @@ views:
                   exclude:
                     - state: unavailable
                     - state: unknown
-                    - entity_id: "*browser*"
-                    - entity_id: "*web_r*"
+                    - entity_id: '*browser*'
+                    - entity_id: '*web_r*'
     type: sections
     max_columns: 2
     cards: []
     icon: mdi:home
     badges: []
+    dense_section_placement: true
+    background:
+      opacity: 50
+      alignment: center
+      size: cover
+      repeat: repeat
+      attachment: fixed
   - title: Info & Diagnose
     path: info-diagnose
     icon: mdi:wrench-clock
@@ -2222,24 +2526,24 @@ views:
                     button_type: state
                     show_attribute: true
                     icon: mdi:battery-10
-                    styles: >-
-                      .bubble-button-card-container { background: rgba(255, 0,
-                      0, 0.2) !important; }
+                    styles: >
+                      .bubble-button-background { background: rgba(255, 0, 0,
+                      0.2) !important; opacity: 1 !important; }
 
                       .bubble-icon { color: var(--error-color) !important; }
                 - domain: binary_sensor
                   attributes:
                     device_class: battery
-                  state: "on"
+                  state: 'on'
                   options:
                     type: custom:bubble-card
                     card_type: button
                     button_type: name
-                    name: "{friendly_name} is bijna leeg"
+                    name: '{friendly_name} is bijna leeg'
                     icon: mdi:battery-alert
-                    styles: >-
-                      .bubble-button-card-container { background: rgba(255, 0,
-                      0, 0.2) !important; }
+                    styles: >
+                      .bubble-button-background { background: rgba(255, 0, 0,
+                      0.2) !important; opacity: 1 !important; }
 
                       .bubble-icon { color: var(--error-color) !important; }
               exclude:
@@ -2251,11 +2555,8 @@ views:
               button_type: name
               name: Alle batterijen zijn in orde
               icon: mdi:battery-check
-              styles: ".bubble-icon { color: var(--success-color) !important; }"
-          - type: custom:bubble-card
-            card_type: separator
-            name: Beveiliging & Klimaat
-            icon: mdi:shield-home
+              styles: |
+                .bubble-icon { color: var(--success-color) !important; }
           - type: custom:auto-entities
             card:
               type: grid
@@ -2266,25 +2567,68 @@ views:
               include:
                 - domain: binary_sensor
                   attributes:
-                    device_class:
-                      - window
-                      - door
-                      - garage_door
-                      - opening
-                  state: "on"
+                    device_class: window
+                  state: 'on'
                   options:
                     type: custom:bubble-card
                     card_type: button
                     button_type: state
                     show_last_changed: true
-                    styles: ".bubble-icon { color: var(--error-color) !important; }"
+                    styles: >
+                      .bubble-button-background { background: rgba(255, 0, 0,
+                      0.2) !important; opacity: 1 !important; }
+
+                      .bubble-icon { color: var(--error-color) !important; }
+                - domain: binary_sensor
+                  attributes:
+                    device_class: door
+                  state: 'on'
+                  options:
+                    type: custom:bubble-card
+                    card_type: button
+                    button_type: state
+                    show_last_changed: true
+                    styles: >
+                      .bubble-button-background { background: rgba(255, 0, 0,
+                      0.2) !important; opacity: 1 !important; }
+
+                      .bubble-icon { color: var(--error-color) !important; }
+                - domain: binary_sensor
+                  attributes:
+                    device_class: garage_door
+                  state: 'on'
+                  options:
+                    type: custom:bubble-card
+                    card_type: button
+                    button_type: state
+                    show_last_changed: true
+                    styles: >
+                      .bubble-button-background { background: rgba(255, 0, 0,
+                      0.2) !important; opacity: 1 !important; }
+
+                      .bubble-icon { color: var(--error-color) !important; }
+                - domain: binary_sensor
+                  attributes:
+                    device_class: opening
+                  state: 'on'
+                  options:
+                    type: custom:bubble-card
+                    card_type: button
+                    button_type: state
+                    show_last_changed: true
+                    styles: >
+                      .bubble-button-background { background: rgba(255, 0, 0,
+                      0.2) !important; opacity: 1 !important; }
+
+                      .bubble-icon { color: var(--error-color) !important; }
             else:
               type: custom:bubble-card
               card_type: button
               button_type: name
               name: Alle ramen en deuren zijn gesloten
               icon: mdi:window-closed-variant
-              styles: ".bubble-icon { color: var(--success-color) !important; }"
+              styles: |
+                .bubble-icon { color: var(--success-color) !important; }
       - type: grid
         cards:
           - type: custom:bubble-card
@@ -2345,146 +2689,8 @@ views:
                         }
                   entity_id: sensor.aion_logic_brain
             show_empty: false
-          - type: custom:bubble-card
-            card_type: separator
-            name: Huishouden
-            icon: mdi:home-analytics
-          - type: custom:auto-entities
-            card:
-              type: grid
-              columns: 1
-              square: false
-            card_param: cards
-            filter:
-              template: |
-                {% set ns = namespace(found=false) %}
-                        {# 1. Zoek of er minstens één afval-sensor bestaat #}
-                        {% set keywords = ['recycleapp', 'afval', 'restafval', 'pmd', 'gft', 'papier', 'glas'] %}
-                        {% for s in states.sensor %}
-                          {% if not ns.found %}
-                            {% for word in keywords %}
-                              {% if word in s.entity_id %}
-                                {% set ns.found = true %}
-                              {% endif %}
-                            {% endfor %}
-                          {% endif %}
-                        {% endfor %}
-
-                        {# 2. Als gevonden: Toon de knop #}
-                        {% if ns.found %}
-                          {{
-                            [
-                              {
-                                'type': 'custom:bubble-card',
-                                'card_type': 'button',
-                                'button_type': 'name',
-                                'name': 'Afvalophaling',
-                                'icon': 'mdi:trash-can-outline',
-                                'scrolling_effect': false,
-                                'button_action': {
-                                  'tap_action': {
-                                    'action': 'navigate',
-                                    'navigation_path': '#AfvalbeheerInfo'
-                                  }
-                                }
-                              }
-                            ]
-                          }}
-                        {% endif %}
-            show_empty: false
-          - type: vertical-stack
-            cards:
-              - type: custom:bubble-card
-                card_type: pop-up
-                hash: "#AfvalbeheerInfo"
-                name: Afvalkalender
-                icon: mdi:trash-can
-                margin_top_mobile: 56px
-              - type: custom:auto-entities
-                card:
-                  type: grid
-                  columns: 1
-                  square: false
-                card_param: cards
-                filter:
-                  include:
-                    - entity_id: "*restafval*"
-                      options:
-                        type: custom:bubble-card
-                        card_type: button
-                        button_type: state
-                        show_icon: true
-                        scrolling_effect: false
-                        button_action:
-                          tap_action:
-                            action: more-info
-                    - entity_id: "*pmd*"
-                      options:
-                        type: custom:bubble-card
-                        card_type: button
-                        button_type: state
-                        show_icon: true
-                        scrolling_effect: false
-                        button_action:
-                          tap_action:
-                            action: more-info
-                    - entity_id: "*papier*"
-                      options:
-                        type: custom:bubble-card
-                        card_type: button
-                        button_type: state
-                        show_icon: true
-                        scrolling_effect: false
-                        button_action:
-                          tap_action:
-                            action: more-info
-                    - entity_id: "*gft*"
-                      options:
-                        type: custom:bubble-card
-                        card_type: button
-                        button_type: state
-                        show_icon: true
-                        scrolling_effect: false
-                        button_action:
-                          tap_action:
-                            action: more-info
-                    - entity_id: "*glas*"
-                      options:
-                        type: custom:bubble-card
-                        card_type: button
-                        button_type: state
-                        show_icon: true
-                        scrolling_effect: false
-                        button_action:
-                          tap_action:
-                            action: more-info
-                    - entity_id: "*recycleapp*"
-                      options:
-                        type: custom:bubble-card
-                        card_type: button
-                        button_type: state
-                        show_icon: true
-                        scrolling_effect: false
-                        button_action:
-                          tap_action:
-                            action: more-info
-                  exclude:
-                    - state: unavailable
-                    - state: unknown
-                    - state: Geen
-                    - state: "off"
-                    - entity_id: "*vandaag*"
-                    - entity_id: "*morgen*"
-                    - entity_id: "*eerstvolgende*"
-                    - entity_id: "*first_next*"
-                    - entity_id: "*datums*"
-                    - entity_id: "*dates*"
-                    - entity_id: "*picture*"
-                    - entity_id: "*event*"
-                unique: true
-                sort:
-                  method: state
-                show_empty: false
+            grid_options:
+              columns: full
       - type: grid
         cards:
           - type: custom:bubble-card
@@ -2500,12 +2706,22 @@ views:
             button_action:
               tap_action:
                 action: navigate
-                navigation_path: "#Verwarming&Ketel"
+                navigation_path: '#Verwarming&Ketel'
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            scrolling_effect: false
+            name: Klimaat entiteiten
+            icon: mdi:home-thermometer
+            button_action:
+              tap_action:
+                action: navigate
+                navigation_path: '#ZoneOverzicht'
           - type: vertical-stack
             cards:
               - type: custom:bubble-card
                 card_type: pop-up
-                hash: "#Verwarming&Ketel"
+                hash: '#Verwarming&Ketel'
               - type: custom:auto-entities
                 card:
                   type: grid
@@ -2533,14 +2749,14 @@ views:
                         button_type: state
                         show_icon: true
                         scrolling_effect: false
-                      entity_id: "*water_pressure*"
+                      entity_id: '*water_pressure*'
                     - options:
                         type: custom:bubble-card
                         card_type: button
                         button_type: state
                         show_icon: true
                         scrolling_effect: false
-                      entity_id: "*water_druk*"
+                      entity_id: '*water_druk*'
                     - options:
                         type: custom:bubble-card
                         card_type: button
@@ -2552,43 +2768,27 @@ views:
                         styles: |-
                           .bubble-icon {
                             color: ${state === 'off' || state === '0' ? 'var(--success-color)' : 'var(--error-color)'} !important;}
-                      entity_id: "*ambisense*trouble_codes*"
+                      entity_id: '*ambisense*trouble_codes*'
                     - options:
                         type: custom:bubble-card
                         card_type: button
                         button_type: state
                         show_icon: true
                         scrolling_effect: false
-                      entity_id: "*ambisense*firmware*"
+                      entity_id: '*ambisense*firmware*'
                     - options:
                         type: custom:bubble-card
                         card_type: button
                         button_type: state
                         show_icon: true
                         scrolling_effect: false
-                      entity_id: "*ambisense*online*"
+                      entity_id: '*ambisense*online*'
                   exclude:
                     - options: {}
                       state: unavailable
                     - options: {}
                       state: unknown
                 show_empty: false
-      - type: grid
-        cards:
-          - type: custom:bubble-card
-            card_type: separator
-            name: Zone Overzicht
-            icon: mdi:thermostat-box-auto
-          - type: custom:bubble-card
-            card_type: button
-            button_type: name
-            scrolling_effect: false
-            name: Klimaat entiteiten
-            icon: mdi:home-thermometer
-            button_action:
-              tap_action:
-                action: navigate
-                navigation_path: "#ZoneOverzicht"
           - type: vertical-stack
             cards:
               - type: custom:bubble-card
@@ -2596,9 +2796,9 @@ views:
                 name: Zone Overzicht
                 icon: mdi:thermostat-box-auto
                 button_type: name
-                hash: "#ZoneOverzicht"
+                hash: '#ZoneOverzicht'
                 show_header: false
-                auto_close: "15000"
+                auto_close: '15000'
                 sub_button:
                   main: []
                   bottom: []
@@ -2623,7 +2823,26 @@ views:
                         show_name: true
                         show_state: false
                         scrolling_effect: false
-                        styles: ""
+                        styles: >
+                          /* Dwing de tegelkleur af op alle mogelijke
+                          achtergrondlagen */
+
+                          .bubble-button-card-container,
+
+                          .bubble-button-background,
+
+                          .bubble-climate-background {
+                            background: var(--bubble-secondary-background-color) !important;
+                            background-color: var(--bubble-secondary-background-color) !important;
+                            opacity: 1 !important;
+                          }
+
+                          /* Icoon logica: oranje bij verwarmen, blauw bij
+                          koelen */
+
+                          .bubble-icon {
+                            color: ${state === 'heat' || state === 'auto' ? 'var(--warning-color)' : (state === 'cool' ? 'var(--info-color)' : 'var(--state-icon-color)')} !important;
+                          }
                       domain: climate
                   exclude:
                     - options: {}
@@ -2632,3 +2851,5 @@ views:
                       state: unknown
                 show_empty: false
     cards: []
+    header: {}
+    dense_section_placement: true
