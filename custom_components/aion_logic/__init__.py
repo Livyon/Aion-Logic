@@ -32,7 +32,7 @@ from .api import AionLogicApiClient, ApiAuthError, ApiConnectionError, ApiTimeou
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BUTTON, Platform.SWITCH, Platform.CALENDAR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SWITCH, Platform.CALENDAR]
 
 async def async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Wordt aangeroepen wanneer de opties worden bijgewerkt."""
