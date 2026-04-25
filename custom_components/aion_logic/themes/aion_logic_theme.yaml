@@ -58,6 +58,19 @@ aion_logic_dynamic_background_theme:
   active-state-color: "#F9AB00"
   bubble-default-color: "var(--primary-color)"
 
+  #-- Semantische Kleuren (Aion State Tokens) --#
+  #--------------------------------------------------
+  success-color: "#43A047" # Helder groen (Veilig / Gesloten / Alles OK)
+  warning-color: "#F9AB00" # Aion Amber (Waarschuwing / Beweging / Pauze)
+  error-color: "#E53935" # Krachtig Rood (Gevaar / Open Raam / Brand)
+  info-color: "#03A9F4" # Helder Blauw (Informatie / Airco Koelen)
+
+  # RGB varianten voor transparantie (indien nodig)
+  rgb-success-color: 67, 160, 71
+  rgb-warning-color: 249, 171, 0
+  rgb-error-color: 229, 57, 53
+  rgb-info-color: 3, 169, 244
+
   # RGB varianten voor consistentie
   rgb-primary-color: 120, 183, 187
   rgb-light-primary-color: 162, 205, 207
@@ -160,7 +173,7 @@ aion_logic_dynamic_background_theme:
   md-sys-color-surface-variant: "var(--primary-background-color)"
   md-sys-color-on-surface: "var(--primary-text-color)"
   md-sys-color-on-surface-variant: "var(--secondary-text-color)"
-  
+
   input-fill-color: "rgba(22, 22, 22, 0.8)"
   input-ink-color: "var(--primary-text-color)"
   input-label-color: "var(--secondary-text-color)"
