@@ -657,8 +657,8 @@ views:
             card_mod:
               style: |
                 .bubble-icon {
-                      color: {{ 'var(--active-state-color)' if expand(area_entities('Gang')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else 'var(--state-icon-color)' }} !important;
-                      opacity: {{ '1' if expand(area_entities('Gang')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else '0.5' }} !important;
+                      color: {{ 'var(--active-state-color)' if is_state('binary_sensor.aion_logic_aion_active_gang', 'on') else 'var(--state-icon-color)' }} !important;
+                      opacity: {{ '1' if is_state('binary_sensor.aion_logic_aion_active_gang', 'on') else '0.5' }} !important;
                     }
           - type: vertical-stack
             cards:
@@ -863,8 +863,8 @@ views:
             card_mod:
               style: |
                 .bubble-icon {
-                      color: {{ 'var(--active-state-color)' if expand(area_entities('Woonkamer')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else 'var(--state-icon-color)' }} !important;
-                      opacity: {{ '1' if expand(area_entities('Woonkamer')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else '0.5' }} !important;
+                      color: {{ 'var(--active-state-color)' if is_state('binary_sensor.aion_logic_aion_active_woonkamer', 'on') else 'var(--state-icon-color)' }} !important;
+                      opacity: {{ '1' if is_state('binary_sensor.aion_logic_aion_active_woonkamer', 'on') else '0.5' }} !important;
                     }
           - type: vertical-stack
             cards:
@@ -1069,8 +1069,8 @@ views:
             card_mod:
               style: |
                 .bubble-icon {
-                      color: {{ 'var(--active-state-color)' if expand(area_entities('Eetkamer')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else 'var(--state-icon-color)' }} !important;
-                      opacity: {{ '1' if expand(area_entities('Eetkamer')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else '0.5' }} !important;
+                      color: {{ 'var(--active-state-color)' if is_state('binary_sensor.aion_logic_aion_active_eetkamer', 'on') else 'var(--state-icon-color)' }} !important;
+                      opacity: {{ '1' if is_state('binary_sensor.aion_logic_aion_active_eetkamer', 'on') else '0.5' }} !important;
                     }
           - type: vertical-stack
             cards:
@@ -1267,8 +1267,8 @@ views:
             card_mod:
               style: |
                 .bubble-icon {
-                      color: {{ 'var(--active-state-color)' if expand(area_entities('Keuken')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else 'var(--state-icon-color)' }} !important;
-                      opacity: {{ '1' if expand(area_entities('Keuken')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else '0.5' }} !important;
+                      color: {{ 'var(--active-state-color)' if is_state('binary_sensor.aion_logic_aion_active_keuken', 'on') else 'var(--state-icon-color)' }} !important;
+                      opacity: {{ '1' if is_state('binary_sensor.aion_logic_aion_active_keuken', 'on') else '0.5' }} !important;
                     }
           - type: vertical-stack
             cards:
@@ -1465,8 +1465,8 @@ views:
             card_mod:
               style: |
                 .bubble-icon {
-                      color: {{ 'var(--active-state-color)' if expand(area_entities('Badkamer')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else 'var(--state-icon-color)' }} !important;
-                      opacity: {{ '1' if expand(area_entities('Badkamer')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else '0.5' }} !important;
+                      color: {{ 'var(--active-state-color)' if is_state('binary_sensor.aion_logic_aion_active_badkamer', 'on') else 'var(--state-icon-color)' }} !important;
+                      opacity: {{ '1' if is_state('binary_sensor.aion_logic_aion_active_badkamer', 'on') else '0.5' }} !important;
                     }
           - type: vertical-stack
             cards:
@@ -1663,8 +1663,8 @@ views:
             card_mod:
               style: |
                 .bubble-icon {
-                      color: {{ 'var(--active-state-color)' if expand(area_entities('Slaapkamer 1')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else 'var(--state-icon-color)' }} !important;
-                      opacity: {{ '1' if expand(area_entities('Slaapkamer 1')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else '0.5' }} !important;
+                      color: {{ 'var(--active-state-color)' if is_state('binary_sensor.aion_logic_aion_active_slaapkamer_1', 'on') else 'var(--state-icon-color)' }} !important;
+                      opacity: {{ '1' if is_state('binary_sensor.aion_logic_aion_active_slaapkamer_1', 'on') else '0.5' }} !important;
                     }
           - type: vertical-stack
             cards:
@@ -1864,8 +1864,8 @@ views:
             card_mod:
               style: |
                 .bubble-icon {
-                      color: {{ 'var(--active-state-color)' if expand(area_entities('Slaapkamer 2')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else 'var(--state-icon-color)' }} !important;
-                      opacity: {{ '1' if expand(area_entities('Slaapkamer 2')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else '0.5' }} !important;
+                      color: {{ 'var(--active-state-color)' if is_state('binary_sensor.aion_logic_aion_active_slaapkamer_2', 'on') else 'var(--state-icon-color)' }} !important;
+                      opacity: {{ '1' if is_state('binary_sensor.aion_logic_aion_active_slaapkamer_2', 'on') else '0.5' }} !important;
                     }
           - type: vertical-stack
             cards:
@@ -2063,8 +2063,8 @@ views:
             card_mod:
               style: |
                 .bubble-icon {
-                      color: {{ 'var(--active-state-color)' if expand(area_entities('Hoofdslaapkamer')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else 'var(--state-icon-color)' }} !important;
-                      opacity: {{ '1' if expand(area_entities('Hoofdslaapkamer')) | selectattr('domain', 'in', ['light', 'switch']) | selectattr('state', 'eq', 'on') | list | count > 0 else '0.5' }} !important;
+                      color: {{ 'var(--active-state-color)' if is_state('binary_sensor.aion_logic_aion_active_hoofdslaapkamer', 'on') else 'var(--state-icon-color)' }} !important;
+                      opacity: {{ '1' if is_state('binary_sensor.aion_logic_aion_active_hoofdslaapkamer', 'on') else '0.5' }} !important;
                     }
           - type: vertical-stack
             cards:
