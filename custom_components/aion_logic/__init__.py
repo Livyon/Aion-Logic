@@ -662,27 +662,6 @@ class AionLogicCoordinator:
         outdoor_temp = float(self._get_state_attr(self.options.get("weather_entity"), "temperature", 15.0) or 15.0)
         outdoor_humidity = float(self._get_state_attr(weather_entity, "humidity", 50.0) or 50.0)
         sun_elevation = float(self._get_state_attr("sun.sun", "elevation", 0))
-        
-        candidate_temps = []
-        for key, zone_cfg in self.options.items():
-            if (key.startswith("area_") or key.startswith("zone_")) and isinstance(zone_cfg, dict):
-                prefix = zone_cfg.get("lookup_prefix", "woonkamer")
-                is_preferred = "woonkamer" in prefix or "woonkamer" in key.lower() or "living" in key.lower()
-                
-                if clim_ents := zone_cfg.get("climate_entities"):
-                    curr = self._get_state_attr(clim_ents[0], "current_temperature")
-                    if curr is not None:
-                        try: 
-                            candidate_temps.append((is_preferred, float(curr), prefix))
-                        except: pass
-        
-        if candidate_temps:
-            candidate_temps.sort(key=lambda x: x[0], reverse=True)
-            current_indoor_temp = candidate_temps[0][1]
-            target_prefix = candidate_temps[0][2]
-            
-            if candidate_temps[0][0]:
-                 _LOGGER.debug(f"Aion Logic Temp Selectie: '{target_prefix}' prioriteit gebruikt ({current_indoor_temp}°C).")
 
         # 6. Energie Status (Advanced Version)
         energy_sensor = self.options.get(CONF_ENERGY_SENSOR)
@@ -881,28 +860,14 @@ class AionLogicCoordinator:
                 domain, service_name = service.split('.', 1)
                 data = action.get("data", {}) or {}
                 
-                # --- 1. SMART FORMATTER (De Oplossing voor Namen) ---
-                # We scannen het bericht op entiteit-ID's en vervangen ze door hun Vriendelijke Naam.
-                if "message" in data and isinstance(data["message"], str):
-                    import re
-                    # Zoek patronen zoals 'binary_sensor.raam_keuken'
-                    potential_ids = re.findall(r"\b[a-z_]+\.[a-z0-9_]+\b", data["message"])
-                    
-                    for entity_id in potential_ids:
-                        state_obj = self.hass.states.get(entity_id)
-                        if state_obj and state_obj.name:
-                            # Vervang ID door Naam (bv. 'binary_sensor.x' -> 'Keuken Raam')
-                            data["message"] = data["message"].replace(entity_id, state_obj.name)
-                            _LOGGER.debug(f"🎨 Smart Formatter: {entity_id} -> {state_obj.name}")
-
-                # --- 2. NOTIFICATION TAGGING ---
+                # --- 1. NOTIFICATION TAGGING ---
                 # Voorkomt stapelen van berichten op de telefoon
                 if domain == "notify":
                     if "data" not in data: data["data"] = {}
                     if "tag" not in data["data"]: 
                         data["data"]["tag"] = "aion_status_update"
 
-                # --- 3. INTERNE SWITCHES ---
+                # --- 2. INTERNE SWITCHES ---
                 if internal_target := action.get("internal_target"):
                     unique_id = f"{self.entry.entry_id}_{internal_target}"
                     entity_id = self._entity_registry.async_get_entity_id("switch", DOMAIN, unique_id)
@@ -911,7 +876,7 @@ class AionLogicCoordinator:
                         executed_count += 1
                     continue
 
-                # --- 4. ENTITY LOOKUP (Standaard Logica) ---
+                # --- 3. ENTITY LOOKUP (Standaard Logica) ---
                 target_entities = []
                 entity_name_ref = action.get("entity")
 
@@ -941,7 +906,7 @@ class AionLogicCoordinator:
                         executed_count += 1
                     continue
 
-                # --- 5. UITVOERING MET SMART VALVE ---
+                # --- 4. UITVOERING MET SMART VALVE ---
                 for ent_id in target_entities:
                     exec_domain = domain
                     exec_service = service_name
