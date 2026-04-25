@@ -113,7 +113,7 @@ class AionLogicCoordinator:
         self._entity_registry: EntityRegistry | None = None
         self._is_running = False
         self._boost_window = None 
-        self._last_weather_block = None 
+        self._last_weather_temp = None 
         self._active_simulation = None
         self._needs_sync = True
         self._motion_timers = {}
@@ -125,13 +125,6 @@ class AionLogicCoordinator:
         # --- DEAD MAN'S SWITCH ---
         self._fail_count = 0 
         self._fail_threshold = 3 
-        
-    def _calculate_weather_block(self, temp: float) -> str:
-        """Bepaalt de weerblok-naam op basis van temperatuur (voor lokale debounce)."""
-        if temp > 16: return "BLOCK_MILD_WARM"
-        elif temp > 12: return "BLOCK_FRIS_HIGH"
-        elif temp > 7: return "BLOCK_FRIS_LOW" 
-        else: return "BLOCK_KOUD"
 
     @callback
     def cleanup_listeners(self) -> None:
@@ -148,7 +141,7 @@ class AionLogicCoordinator:
         self.options = new_options
         self._needs_sync = True
         self.cleanup_listeners()
-        self._last_weather_block = None 
+        self._last_weather_temp = None 
         await self.setup_listeners()
 
     async def async_handle_person_state_trigger(self, event):
@@ -161,15 +154,6 @@ class AionLogicCoordinator:
         if old_state and old_state.state != new_state.state:
             # --- Ghost Bounce Tracker ---
             if new_state.state != "home" and old_state.state == "home":
-
-                if "gps_accuracy" in new_state.attributes:
-                    try:
-                        gps_acc = float(new_state.attributes.get("gps_accuracy", 0))
-                        if gps_acc > 100:
-                            _LOGGER.warning(f"🛡️ GPS Drift Guard: Negeer vals vertrek '{entity_id}' wegens slechte GPS ({gps_acc}m).")
-                            return
-                    except (ValueError, TypeError):
-                        pass
                 
                 self._person_departure_time[entity_id] = dt_util.utcnow()
 
@@ -229,10 +213,12 @@ class AionLogicCoordinator:
 
         try:
             new_temp = float(new_state_obj.attributes.get("temperature", 99.0)) 
-            current_block = self._calculate_weather_block(new_temp)
-            if current_block != self._last_weather_block:
-                _LOGGER.info(f"SLIMME TRIGGER: Weerblok veranderd. Trigger Hoofdlogica.")
-                self._last_weather_block = current_block 
+            last_temp = getattr(self, "_last_weather_temp", None)
+            
+            # Domme Edge: Trigger de Cloud alleen bij een weersverandering van 0.5°C of meer
+            if last_temp is None or abs(new_temp - last_temp) >= 0.5:
+                _LOGGER.info(f"SLIMME TRIGGER: Temperatuurverschuiving buiten ({new_temp}°C). Trigger Hoofdlogica.")
+                self._last_weather_temp = new_temp 
                 await self.async_trigger_main_logic(event) 
         except Exception: pass
 
@@ -462,6 +448,34 @@ class AionLogicCoordinator:
         if driver_sensors:
             self._listeners.append(async_track_state_change_event(self.hass, driver_sensors, self.async_trigger_main_logic))
 
+        # --- LOKALE LIFE-SAFETY TRIGGERS (Brand & Extern Alarm) ---
+        safety_triggers =[]
+        if smoke_sensors := self.options.get(CONF_SMOKE_SENSORS,[]):
+            safety_triggers.extend(smoke_sensors)
+        if alarm_panel := self.options.get(CONF_ALARM_PANEL):
+            safety_triggers.append(alarm_panel)
+            
+        if safety_triggers:
+            async def async_handle_safety(event):
+                new_state = event.data.get("new_state")
+                entity_id = event.data.get("entity_id")
+                if not new_state or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN): return
+                
+                # Brand Check
+                if entity_id in self.options.get(CONF_SMOKE_SENSORS,[]):
+                    if new_state.state in ["on", "unsafe", "smoke", "detected"]:
+                        await self._trigger_local_emergency("fire")
+                        await self.async_trigger_main_logic(event) # Laat cloud de pushberichten doen
+                        
+                # Extern Alarm Check
+                elif entity_id == self.options.get(CONF_ALARM_PANEL):
+                    if new_state.state == "triggered":
+                        await self._trigger_local_emergency("intrusion")
+                        await self.async_trigger_main_logic(event)
+
+            _LOGGER.debug(f"Listener geregistreerd voor Local Life-Safety: {len(safety_triggers)} sensoren.")
+            self._listeners.append(async_track_state_change_event(self.hass, safety_triggers, async_handle_safety))
+
         _LOGGER.debug("Alle listeners zijn geregistreerd.")
 
     def _get_internal_switch_state(self, switch_type: str) -> str:
@@ -573,17 +587,10 @@ class AionLogicCoordinator:
                 # --- Ghost Window ---
                 eff_state = state_obj.state
                 is_ghost_masked = False
-
-                if eff_state != "home":
-                    try:
-                        gps_acc = float(state_obj.attributes.get("gps_accuracy", 0))
-                        if gps_acc > 100:
-                            if not departed_at:
-                                _LOGGER.debug(f"🛡️ GPS Drift Masker: {entity_id} gemaskeerd naar 'home' (Slechte GPS: {gps_acc}m)")
-                                eff_state = "home"
-                                is_ghost_masked = True
-                    except (ValueError, TypeError):
-                        pass
+                
+                # Haal rauwe GPS nauwkeurigheid op voor de Cloud
+                try: gps_acc = float(state_obj.attributes.get("gps_accuracy", 0))
+                except: gps_acc = 0.0
                 
                 if eff_state != "home" and departed_at:
                     if (dt_util.utcnow() - departed_at).total_seconds() < (GHOST_WINDOW_SECONDS - 2):
@@ -604,7 +611,8 @@ class AionLogicCoordinator:
 
                 persons_data[entity_id] = {
                     "state": eff_state,
-                    "last_changed": eff_last_changed.isoformat() if eff_last_changed else None
+                    "last_changed": eff_last_changed.isoformat() if eff_last_changed else None,
+                    "gps_accuracy": gps_acc
                 }
         
         persons_home = any(p.get("state") == "home" for p in persons_data.values())
@@ -998,6 +1006,47 @@ class AionLogicCoordinator:
                             await self.hass.services.async_call("climate", "set_hvac_mode", {"entity_id": entity_id, "hvac_mode": "heat"})
                             await self.hass.services.async_call("climate", "set_temperature", {"entity_id": entity_id, "temperature": fallback_temp})
                 except Exception: pass
+
+    async def _trigger_local_emergency(self, emergency_type: str):
+        """Voert kritieke levensreddende acties direct lokaal uit, zonder internet!"""
+        _LOGGER.warning(f"🚨 LOKALE NOODSITUATIE GETRIGGERD: {emergency_type.upper()}")
+        
+        try:
+            if emergency_type == "fire":
+                # 1. Vluchtwegverlichting 100% AAN
+                if fire_lights := self.options.get(CONF_FIRE_LIGHTS):
+                    await self.hass.services.async_call("homeassistant", "turn_on", {"entity_id": fire_lights}, blocking=False)
+                
+                # 2. Vluchtweg Rolluiken OPEN
+                if fire_shutters := self.options.get(CONF_FIRE_SHUTTERS):
+                    await self.hass.services.async_call("cover", "open_cover", {"entity_id": fire_shutters}, blocking=False)
+                
+                # 3. Centrale Ventilatie UIT (Rookverspreiding voorkomen)
+                if central_fan := self.options.get(CONF_CENTRAL_VENT):
+                    await self.hass.services.async_call("homeassistant", "turn_off", {"entity_id": central_fan}, blocking=False)
+                
+                # 4. Verwarming UIT (Voorkom verspreiding via luchtstromen)
+                for key, zone_data in self.options.items():
+                    if (key.startswith("area_") or key.startswith("zone_")) and isinstance(zone_data, dict):
+                        if clim_ents := zone_data.get("climate_entities"):
+                            await self.hass.services.async_call("climate", "set_hvac_mode", {"entity_id": clim_ents, "hvac_mode": "off"}, blocking=False)
+
+            elif emergency_type == "intrusion":
+                # 1. Afschrikverlichting AAN
+                if defense_lights := self.options.get(CONF_DEFENSE_LIGHTS):
+                    await self.hass.services.async_call("homeassistant", "turn_on", {"entity_id": defense_lights}, blocking=False)
+                
+                # 2. Lokale Sirene AAN (Via media_player)
+                if speakers := self.options.get(CONF_DEFENSE_SPEAKERS):
+                    await self.hass.services.async_call("media_player", "volume_set", {"entity_id": speakers, "volume_level": 1.0}, blocking=False)
+                    await self.hass.services.async_call("media_player", "play_media", {
+                        "entity_id": speakers, 
+                        "media_content_id": f"/{DOMAIN}_assets/sirene_battleship.mp3", 
+                        "media_content_type": "music"
+                    }, blocking=False)
+
+        except Exception as e:
+            _LOGGER.error(f"Fout bij uitvoeren lokale nood-actie: {e}")
 
     async def async_trigger_main_logic(self, *args):
         _LOGGER.debug(f"Aion Logic Hoofdlogica getriggerd door: {args}")
