@@ -101,3 +101,6 @@ class AionLogicApiClient:
 
     async def trigger_proactive_start(self, payload: dict) -> dict:
         return await self._make_request("/proactive_start", payload)
+
+    async def build_dashboard(self, payload: dict) -> dict:
+        return await self._make_request("/build_dashboard", payload)
