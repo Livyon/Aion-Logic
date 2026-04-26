@@ -47,7 +47,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 def _save_dashboard_file(hass: HomeAssistant, dashboard_yaml: str, room_count: int) -> tuple[bool, str]:
     """Slaat de door de Cloud gegenereerde YAML op."""
-    try:      
+    try:
+        # Definieer hier opnieuw de paden
+        dest_dir = os.path.join(hass.config.path(), "custom_components", DOMAIN, "www")
+        dest_path = os.path.join(dest_dir, DASHBOARD_PUBLIC_FILENAME)
+        
+        if os.path.exists(dest_path):
+            return False, "Veiligheid: Het dashboard bestaat al. Hernoem of verwijder uw huidige 'aion_logic-dashboard-code.txt' eerst."
+            
         if not os.path.exists(dest_dir):
             os.makedirs(dest_dir)
             
@@ -58,7 +65,7 @@ def _save_dashboard_file(hass: HomeAssistant, dashboard_yaml: str, room_count: i
         return True, f"Het dashboard is op maat gegenereerd voor {room_count} kamers.\n\n👉[**RECHTERMUISKNOP HIER -> OPEN IN NIEUW TABBLAD**]({link_url})\n\n*(Op mobiel: houd de link lang ingedrukt)*"
         
     except Exception as e:
-        _LOGGER.error(f"Fout bij genereren dashboard: {e}")
+        _LOGGER.error(f"Fout bij opslaan dashboard: {e}")
         return False, f"Onverwachte fout: {e}"
 
 def _copy_file_to_config(hass: HomeAssistant, source_dir: str, source_file: str, dest_dir_name: str, dest_file_name: str) -> tuple[bool, str]:
