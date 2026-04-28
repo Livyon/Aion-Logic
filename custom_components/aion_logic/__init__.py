@@ -1227,7 +1227,12 @@ class AionLogicCoordinator:
 
                      # Sla ECHTE start op in de window voor kloppende leertijd
                      echte_start = dt_util.now()
-                     self._boost_window = {"start": echte_start, "end": target_dt, "start_temp": start_temp, "target_prefix":
+                     self._boost_window = {
+                         "start": echte_start, 
+                         "end": target_dt, 
+                         "start_temp": start_temp, 
+                         "target_prefix": worst_zone
+                     }
                      
                      await self.async_trigger_main_logic()
                      _LOGGER.info(f"🚀 Proactieve Boost gestart! Berekend: {start_dt.strftime('%H:%M:%S')} -> Actueel: {echte_start.strftime('%H:%M:%S')}, Doel: {target_dt.strftime('%H:%M:%S')}, Temp: {start_temp}°C")
@@ -1253,7 +1258,12 @@ class AionLogicCoordinator:
                                          except: pass
 
                      # We blokkeren de window nu al om dubbele interval-checks te voorkomen
-                     self._boost_window = {"start": start_dt, "end": target_dt, "start_temp": start_temp, "target_prefix":
+                     self._boost_window = {
+                         "start": start_dt, 
+                         "end": target_dt, 
+                         "start_temp": start_temp, 
+                         "target_prefix": worst_zone
+                     }
                      
                      from homeassistant.helpers.event import async_call_later
                      async def _exact_start(_):
