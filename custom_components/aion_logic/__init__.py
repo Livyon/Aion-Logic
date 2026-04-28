@@ -519,7 +519,7 @@ class AionLogicCoordinator:
     def _build_main_logic_payload(self, trigger_entity_id: str | None = None) -> dict:
         """Bouwt de payload voor de Cloud Logic."""
         
-        target_prefix = "woonkamer" 
+        target_prefix = self._boost_window.get("target_prefix", "woonkamer") if self._boost_window else "woonkamer" 
         current_indoor_temp = 18.0
         
         friendly_names = {}
@@ -1195,6 +1195,7 @@ class AionLogicCoordinator:
             response = await self.api_client.trigger_proactive_start(payload)
             
             if t_str := response.get("calculated_start_time"):
+                worst_zone = response.get("worst_zone", "woonkamer")
                 start_dt = time.fromisoformat(t_str)
                 vandaag = dt_util.now().date()
                 start_dt = dt_util.as_local(dt_util.dt.datetime.combine(vandaag, start_dt))
@@ -1206,30 +1207,27 @@ class AionLogicCoordinator:
                      target_str = self.options.get("proactive_target_time", "06:00:00")
                      target_dt = dt_util.as_local(dt_util.dt.datetime.combine(vandaag, time.fromisoformat(target_str)))
                      
-                     # --- NIEUW: Leg de starttemperatuur vast ---
+                     # --- NIEUW: Leg de starttemperatuur vast voor de KOUDSTE ruimte ---
                      start_temp = 18.0 # Fallback
-                     found_temp = False
                      
                      # Loop door zones om een geldige meting te vinden
                      for key, zone_cfg in self.options.items():
                          if (key.startswith("area_") or key.startswith("zone_")) and isinstance(zone_cfg, dict):
-                             # 1. Probeer losse sensor
-                             if s := zone_cfg.get("current_temp_sensor"):
-                                 if val := self._get_state(s):
-                                     try: start_temp = float(val); found_temp = True; break
-                                     except: pass
-                             
-                             # 2. Probeer thermostaat attribuut
-                             if not found_temp and (clim_ents := zone_cfg.get("climate_entities")):
-                                 if val := self._get_state_attr(clim_ents[0], "current_temperature"):
-                                     try: start_temp = float(val); found_temp = True; break
-                                     except: pass
-                         if found_temp: break
+                             if zone_cfg.get("lookup_prefix", "").lower() == worst_zone.lower():
+                                 if s := zone_cfg.get("current_temp_sensor"):
+                                     if val := self._get_state(s):
+                                         try: start_temp = float(val); break
+                                         except: pass
+                                 
+                                 if clim_ents := zone_cfg.get("climate_entities"):
+                                     if val := self._get_state_attr(clim_ents[0], "current_temperature"):
+                                         try: start_temp = float(val); break
+                                         except: pass
                      # -------------------------------------------
 
                      # Sla ECHTE start op in de window voor kloppende leertijd
                      echte_start = dt_util.now()
-                     self._boost_window = {"start": echte_start, "end": target_dt, "start_temp": start_temp}
+                     self._boost_window = {"start": echte_start, "end": target_dt, "start_temp": start_temp, "target_prefix":
                      
                      await self.async_trigger_main_logic()
                      _LOGGER.info(f"🚀 Proactieve Boost gestart! Berekend: {start_dt.strftime('%H:%M:%S')} -> Actueel: {echte_start.strftime('%H:%M:%S')}, Doel: {target_dt.strftime('%H:%M:%S')}, Temp: {start_temp}°C")
@@ -1240,23 +1238,22 @@ class AionLogicCoordinator:
                      target_dt = dt_util.as_local(dt_util.dt.datetime.combine(vandaag, time.fromisoformat(target_str)))
                      
                      start_temp = 18.0 # Fallback
-                     found_temp = False
                      
                      for key, zone_cfg in self.options.items():
                          if (key.startswith("area_") or key.startswith("zone_")) and isinstance(zone_cfg, dict):
-                             if s := zone_cfg.get("current_temp_sensor"):
-                                 if val := self._get_state(s):
-                                     try: start_temp = float(val); found_temp = True; break
-                                     except: pass
-                             
-                             if not found_temp and (clim_ents := zone_cfg.get("climate_entities")):
-                                 if val := self._get_state_attr(clim_ents[0], "current_temperature"):
-                                     try: start_temp = float(val); found_temp = True; break
-                                     except: pass
-                         if found_temp: break
+                             if zone_cfg.get("lookup_prefix", "").lower() == worst_zone.lower():
+                                 if s := zone_cfg.get("current_temp_sensor"):
+                                     if val := self._get_state(s):
+                                         try: start_temp = float(val); break
+                                         except: pass
+                                 
+                                 if clim_ents := zone_cfg.get("climate_entities"):
+                                     if val := self._get_state_attr(clim_ents[0], "current_temperature"):
+                                         try: start_temp = float(val); break
+                                         except: pass
 
                      # We blokkeren de window nu al om dubbele interval-checks te voorkomen
-                     self._boost_window = {"start": start_dt, "end": target_dt, "start_temp": start_temp}
+                     self._boost_window = {"start": start_dt, "end": target_dt, "start_temp": start_temp, "target_prefix":
                      
                      from homeassistant.helpers.event import async_call_later
                      async def _exact_start(_):
