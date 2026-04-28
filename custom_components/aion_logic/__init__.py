@@ -1186,7 +1186,12 @@ class AionLogicCoordinator:
         if self._boost_window: return 
         try:
             base = self._build_main_logic_payload()
-            payload = {"config": base["config"], "sensors": base["sensors"]}
+            payload = {
+                "config": base["config"], 
+                "sensors": base["sensors"],
+                "climate_zones": base.get("climate_zones", {}),
+                "context": base.get("context", {})
+            }
             response = await self.api_client.trigger_proactive_start(payload)
             
             if t_str := response.get("calculated_start_time"):
@@ -1222,11 +1227,12 @@ class AionLogicCoordinator:
                          if found_temp: break
                      # -------------------------------------------
 
-                     # Sla start_temp op in de window
-                     self._boost_window = {"start": start_dt, "end": target_dt, "start_temp": start_temp}
+                     # Sla ECHTE start op in de window voor kloppende leertijd
+                     echte_start = dt_util.now()
+                     self._boost_window = {"start": echte_start, "end": target_dt, "start_temp": start_temp}
                      
                      await self.async_trigger_main_logic()
-                     _LOGGER.info(f"🚀 Proactieve Boost gestart! Starttijd: {start_dt.strftime('%H:%M:%S')}, Doeltijd: {target_dt.strftime('%H:%M:%S')}, Start Temp: {start_temp}°C")
+                     _LOGGER.info(f"🚀 Proactieve Boost gestart! Berekend: {start_dt.strftime('%H:%M:%S')} -> Actueel: {echte_start.strftime('%H:%M:%S')}, Doel: {target_dt.strftime('%H:%M:%S')}, Temp: {start_temp}°C")
                 
                 # --- De Exact Timer Patch (Asynchrone Start) ---
                 elif 0 < tijd_verschil <= 300:
