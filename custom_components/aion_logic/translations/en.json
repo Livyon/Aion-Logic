@@ -91,6 +91,7 @@
                     "motion_timer": "⏱️ Timer: Auto-off lights after (minutes)",
                     "window_sensors": "Window/Door Sensors",
                     "enable_boost": "Allow Boost in this room?",
+                    "is_reference": "Referenceroom (Primary room start/stop proactive start)",
                     "day_start": "Day starts at",
                     "night_start": "Night starts at",
                     "lookup_prefix": "Link to Profile (e.g., Living Room/Office)"
