@@ -196,6 +196,7 @@ def _get_zone_schema_generic(zone_data: dict, zone_slot_key: str = None) -> vol.
         vol.Required("night_start", default=zone_data.get("night_start", "22:00:00")): selector.TimeSelector(),
         vol.Optional("window_sensors", default=zone_data.get("window_sensors", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)),
         vol.Optional("enable_boost", default=zone_data.get("enable_boost", True)): selector.BooleanSelector(),
+        vol.Optional("is_reference", default=zone_data.get("is_reference", False)): selector.BooleanSelector(),
         vol.Required("lookup_prefix", default=zone_data.get("lookup_prefix", "woonkamer")): selector.SelectSelector(selector.SelectSelectorConfig(options=SETPOINT_GROUPS, mode=selector.SelectSelectorMode.DROPDOWN)),
         vol.Optional("zone_ventilation", default=_safe_default("zone_ventilation")): selector.EntitySelector({"domain": ["fan", "switch", "select"]}),
         vol.Optional("humidity_sensor", default=_safe_default("humidity_sensor")): selector.EntitySelector({"domain": ["sensor", "binary_sensor"],"device_class": ["humidity", "moisture"]}),
@@ -522,6 +523,7 @@ class AionLogicOptionsFlow(OptionsFlow):
                 "window_sensors": found_windows,
                 "lighting_entities": found_lights,
                 "enable_boost": True,
+                "is_reference": False,
                 "day_start": "06:00:00",
                 "night_start": "22:00:00",
                 "lookup_prefix": "woonkamer"
