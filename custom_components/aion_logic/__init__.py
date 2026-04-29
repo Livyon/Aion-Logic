@@ -743,6 +743,7 @@ class AionLogicCoordinator:
                     "humidity_state": self._get_state(value.get("humidity_sensor")),
                     "schedule": value.get("schedule", {}),
                     "enable_boost": value.get("enable_boost", True),
+                    "is_reference": value.get("is_reference", False),
                     "_all_climate_entities": value.get("climate_entities", [])
                 }
 
