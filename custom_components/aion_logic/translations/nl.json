@@ -91,6 +91,7 @@
                     "motion_timer": "⏱️ Timer: Licht automatisch uit na (minuten)",
                     "window_sensors": "Raam/Deur Sensoren",
                     "enable_boost": "Sta Boost toe in deze kamer?",
+                    "is_reference": "Referentiekamer (primaire kamer begin/einde proactive start)",
                     "day_start": "Dag begint om",
                     "night_start": "Nacht begint om",
                     "lookup_prefix": "Koppel aan Profiel (bv. Woonkamer/Kantoor)"
