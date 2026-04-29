@@ -312,9 +312,11 @@ class AionLogicCoordinator:
         except ValueError: 
             target_time = time(6, 0)
         
+        local_now = dt_util.as_local(now)
+
         # Monitor venster: 4 uur voor doeltijd
         start_monitor_hour = (target_time.hour - 4) % 24 
-        current_hour = now.hour
+        current_hour = local_now.hour
         
         in_window = False
         if start_monitor_hour < target_time.hour: 
@@ -624,19 +626,25 @@ class AionLogicCoordinator:
         active_boost_start_temp = None
         
         if self._boost_window:
-            if nu >= self._boost_window["end"]:
-                _LOGGER.info("Boost cyclus voltooid. Learning Snapshot versturen.")
+             # 1. Zodra we voorbij de starttijd zijn, sturen we continu de startdata mee.
+            if nu >= self._boost_window["start"]:
                 active_boost_start = self._boost_window["start"].strftime('%Y-%m-%dT%H:%M:%S')
                 active_boost_start_temp = self._boost_window.get("start_temp")
-                self._boost_window = None 
-            elif trigger_entity_id in self.options.get("person_entities", []) and not persons_home:
-                _LOGGER.info("Boost cyclus onderbroken. Learning Snapshot versturen.")
-                active_boost_start = self._boost_window["start"].strftime('%Y-%m-%dT%H:%M:%S')
-                active_boost_start_temp = self._boost_window.get("start_temp")
-            elif self._boost_window["start"] <= nu < self._boost_window["end"]:
-                if persons_home:
+                target_prefix = self._boost_window.get("target_prefix", "woonkamer")
+                
+                if persons_home and nu < self._boost_window["end"]:
                     simulated_time_str = self._boost_window["end"].strftime('%H:%M:%S')
-                    _LOGGER.debug(f"BOOST BEZIG: Tijdsimulatie actief ({simulated_time_str}), maar nog geen learning data.")
+                    
+            # 2. Time-out beveiliging (Voor trage kamers die hun doel onmogelijk halen)
+            if nu >= self._boost_window["end"] + timedelta(hours=2):
+                _LOGGER.info("Boost cyclus time-out (2 uur na doel). Snapshot geforceerd beëindigd.")
+                self._boost_window = None
+                active_boost_start = None
+            
+            # 3. Interruptie door vertrek
+            elif trigger_entity_id in self.options.get("person_entities",[]) and not persons_home:
+                _LOGGER.info("INTERRUPTIE: Laatste persoon vertrekt. Snapshot beëindigd.")
+                self._boost_window = None
         # Context
         context_data = {
             "current_time": simulated_time_str,
@@ -791,12 +799,6 @@ class AionLogicCoordinator:
                             payload["sensors"][f"{m}_last_changed"] = state_obj.last_changed.isoformat()
                     else:
                         payload["sensors"][m] = "off"
-
-        # Boost Reset Logic (Indien klaar)
-        if self._boost_window and persons_home and active_boost_start:
-             # Alleen resetten als we de snapshot hebben gemaakt
-             self._boost_window = None
-             _LOGGER.info("🧠 Neural Core: Boost cyclus afgerond & data verzonden.")
 
         # --- FRIENDLY NAMES INJECTIE ---
         friendly_names = {}
@@ -1141,7 +1143,12 @@ class AionLogicCoordinator:
                 
                 if learning_result:
                     self.hass.bus.async_fire("aion_logic_learning_update", learning_result)
-                    
+
+                    # --- FIX: Stop de snapshot zodra Cloud succesvol heeft geleerd ---
+                    if self._boost_window:
+                        self._boost_window = None
+                        _LOGGER.info("🧠 Neural Core heeft succesvol geleerd. Boost geheugen gewist.")
+                     
                     # --- SAFETY FIX: MPD RESET ---
                     new_mpd_val = float(learning_result.get("new_mpd", 30.0))
                     if new_mpd_val >= 90.0 and self.options.get("minutes_per_degree", 30.0) >= 90.0:
