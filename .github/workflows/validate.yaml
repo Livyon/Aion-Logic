@@ -74,4 +74,5 @@ jobs:
         run: |
           mkdir -p /config/custom_components/aion_logic
           cp -a * /config/custom_components/aion_logic/ || true
+          echo "default_config:" > /config/configuration.yaml
           python -m homeassistant --config /config --script check_config  
