@@ -60,3 +60,18 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
+
+  beta-shield:
+    name: 🛡️ HA Beta Shield (Breaking Changes Check)
+    runs-on: ubuntu-latest
+    continue-on-error: true # Voorkomt dat een falende beta je huidige productie-updates blokkeert
+    container:
+      image: ghcr.io/home-assistant/home-assistant:beta
+    steps:
+      - name: 📥 Haal de code op (Checkout)
+        uses: actions/checkout@v4
+      - name: 🧪 Mount & Dry-Run in toekomstige HA Core
+        run: |
+          mkdir -p /config/custom_components/aion_logic
+          cp -a * /config/custom_components/aion_logic/ || true
+          python -m homeassistant --config /config --script check_config  
