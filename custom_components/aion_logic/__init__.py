@@ -275,7 +275,7 @@ class AionLogicCoordinator:
         # 3. GEEN BEWEGING MEER (Start Uitschakel-Timer)
         elif new_state.state == "off":
             # Zeker weten dat ALLE sensoren in deze ruimte 'off' zijn
-            if any(self._get_state(m_id) == "on" for m_id in zone_config.get("motion_sensors", [])): return
+            if any(self._get_state(m_id) == "on" for m_id in zone_config.get("motion_sensors",[]) if m_id != entity_id): return
 
             if cancel_timer := self._motion_timers.get(target_zone_id):
                 cancel_timer()
@@ -425,6 +425,40 @@ class AionLogicCoordinator:
         if motion_sensors:
             _LOGGER.debug(f"Listener geregistreerd voor Lokale Smart Edge (Beweging): {len(motion_sensors)} sensoren.")
             self._listeners.append(async_track_state_change_event(self.hass, list(set(motion_sensors)), self.async_handle_motion_trigger))
+            
+            # --- ZHA IKEA Vallhorn / Stateless Sensor Patch ---
+            async def async_handle_zha_event(event):
+                device_id = event.data.get("device_id")
+                command = event.data.get("command")
+                if not device_id or not command: return
+                
+                matching_entities =[
+                    ent.entity_id for ent in self._entity_registry.entities.values() 
+                    if ent.device_id == device_id and ent.entity_id in motion_sensors
+                ]
+                
+                if not matching_entities: return
+                
+                eff_state = None
+                if command in ["on_with_timed_off", "on"]:
+                    eff_state = "on"
+                elif command == "off":
+                    eff_state = "off"
+                elif command == "attribute_updated":
+                    args = event.data.get("args", {})
+                    if isinstance(args, dict) and args.get("attribute_name") == "on_off":
+                        eff_state = "on" if args.get("value") == 1 else "off"
+
+                if eff_state:
+                    class DummyState:
+                        def __init__(self, state): self.state = state
+                    class DummyEvent:
+                        def __init__(self, eid, state): self.data = {"entity_id": eid, "new_state": DummyState(state)}
+                    
+                    for eid in matching_entities:
+                        await self.async_handle_motion_trigger(DummyEvent(eid, eff_state))
+                        
+            self._listeners.append(self.hass.bus.async_listen("zha_event", async_handle_zha_event))
 
         self._listeners.append(async_track_time_change(self.hass, self.async_trigger_main_logic, hour=23, minute=0, second=0))
         self._listeners.append(async_track_time_change(self.hass, self.async_trigger_main_logic, hour=4, minute=59, second=59))
