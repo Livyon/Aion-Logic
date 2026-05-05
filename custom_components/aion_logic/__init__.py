@@ -150,6 +150,11 @@ class AionLogicCoordinator:
         entity_id = event.data.get('entity_id')
 
         if not new_state or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN): return
+
+        # Bepaal dynamische Ghost Window (15 min nachts, anders standaard)
+        scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
+        eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else GHOST_WINDOW_SECONDS
+
         
         if old_state and old_state.state != new_state.state:
             # --- Ghost Bounce Tracker ---
@@ -159,7 +164,7 @@ class AionLogicCoordinator:
 
                                 
                 # --- Vertrek Debounce (Ghost Departure Guard) ---
-                _LOGGER.debug(f"⏳ Mogelijke afwezigheid '{entity_id}' gedetecteerd. Wachten op bevestiging ({GHOST_WINDOW_SECONDS}s)...")
+                _LOGGER.debug(f"⏳ Mogelijke afwezigheid '{entity_id}' gedetecteerd. Wachten op bevestiging ({eff_ghost_window}s)...")
                 
                 async def verify_departure(_):
                     current_state = self._get_state(entity_id)
@@ -179,7 +184,7 @@ class AionLogicCoordinator:
                         _LOGGER.debug(f"👻 Ghost Departure geannuleerd voor '{entity_id}' (Was snel weer thuis).")
             
                 from homeassistant.helpers.event import async_call_later
-                self._listeners.append(async_call_later(self.hass, GHOST_WINDOW_SECONDS, verify_departure))
+                self._listeners.append(async_call_later(self.hass, eff_ghost_window, verify_departure))
                 return
 
             is_real_arrival = (new_state.state == "home" and old_state.state != "home")
@@ -188,7 +193,7 @@ class AionLogicCoordinator:
                 departed_at = self._person_departure_time.get(entity_id)
                 if departed_at:
                     absence_duration = (dt_util.utcnow() - departed_at).total_seconds()
-                    if absence_duration <= GHOST_WINDOW_SECONDS:
+                    if absence_duration <= eff_ghost_window:
                         _LOGGER.warning(f"🛡️ Ghost Bounce Guard: '{entity_id}' was slechts {int(absence_duration)}s weg. Cloud trigger geannuleerd (ghost-bounce).")
                         return
                 
@@ -623,13 +628,15 @@ class AionLogicCoordinator:
                 # --- Ghost Window ---
                 eff_state = state_obj.state
                 is_ghost_masked = False
-                
+                scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
+                eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else GHOST_WINDOW_SECONDS
+                 
                 # Haal rauwe GPS nauwkeurigheid op voor de Cloud
                 try: gps_acc = float(state_obj.attributes.get("gps_accuracy", 0))
                 except: gps_acc = 0.0
                 
                 if eff_state != "home" and departed_at:
-                    if (dt_util.utcnow() - departed_at).total_seconds() < (GHOST_WINDOW_SECONDS - 2):
+                    if (dt_util.utcnow() - departed_at).total_seconds() < (eff_ghost_window - 2):
                         _LOGGER.debug(f"👻 Ghost Window actief voor {entity_id}: Tussentijdse payload forceert status naar 'home'.")
                         eff_state = "home"
                         is_ghost_masked = True
@@ -1237,6 +1244,10 @@ class AionLogicCoordinator:
             response = await self.api_client.trigger_proactive_start(payload)
             
             if t_str := response.get("calculated_start_time"):
+                if response.get("info") == "Already warm enough.":
+                    _LOGGER.info("🌡️ Doeltemperatuur reeds bereikt. Geen proactieve start (en geen leer-cyclus) nodig.")
+                    return
+                    
                 worst_zone = response.get("worst_zone", "woonkamer")
                 start_dt = time.fromisoformat(t_str)
                 vandaag = dt_util.now().date()
