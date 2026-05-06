@@ -121,6 +121,7 @@ class AionLogicCoordinator:
         # --- GHOST BOUNCE & RESTART PROTECTION ---
         self._startup_time = dt_util.utcnow()
         self._person_departure_time = {}
+        self._person_departure_fuzzy = {}
         
         # --- DEAD MAN'S SWITCH ---
         self._fail_count = 0 
@@ -162,6 +163,10 @@ class AionLogicCoordinator:
                 
                 self._person_departure_time[entity_id] = dt_util.utcnow()
 
+                # Check of dit een wazige GPS uitschieter is (bijv. Cell Tower > 80m)
+                try: dep_gps = float(new_state.attributes.get("gps_accuracy", 0))
+                except: dep_gps = 0.0
+                self._person_departure_fuzzy[entity_id] = (dep_gps >= 80.0)
                                 
                 # --- Vertrek Debounce (Ghost Departure Guard) ---
                 _LOGGER.debug(f"⏳ Mogelijke afwezigheid '{entity_id}' gedetecteerd. Wachten op bevestiging ({eff_ghost_window}s)...")
@@ -623,6 +628,7 @@ class AionLogicCoordinator:
                 
                 # 2. Bounce Check (Minder dan 5 min weg geweest)
                 departed_at = self._person_departure_time.get(entity_id)
+                is_fuzzy_dep = getattr(self, "_person_departure_fuzzy", {}).get(entity_id, False)
                 is_bounce = False
                 
                 # --- Ghost Window ---
@@ -642,7 +648,9 @@ class AionLogicCoordinator:
                         is_ghost_masked = True
                         
                 if departed_at and state_obj.state == "home":
-                    if (dt_util.utcnow() - departed_at).total_seconds() < 300:
+                    # Dynamische bounce-limiet: 30 minuten bij slechte GPS, 5 minuten bij goede GPS
+                    bounce_limit = 1800 if is_fuzzy_dep else 300
+                    if (dt_util.utcnow() - departed_at).total_seconds() < bounce_limit:
                         is_bounce = True
                         
                 if is_recent_restart or is_bounce or is_ghost_masked:
