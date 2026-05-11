@@ -39,6 +39,7 @@
                     "lifestyle": "💡 Lifestyle & Ambiance",
                     "air_quality": "🍃 Air Quality & Ventilation",
                     "safety": "Step 10: 🛡️ Safety & Active Guardian",
+                    "wall_panel": "📱 Dashboard & Wall Panel",
                     "drivers": "🚗 Cars & Commute",
                     "energy": "⚡ Energy Optimization",
                     "fallback": "🛡️ Emergency Mode (Fallback)"
@@ -162,6 +163,15 @@
                     "smoke_sensors": "🔥 Fire: Smoke Detectors",
                     "fire_lights": "🔥 Fire: Escape Route Lighting (Turns 100% ON)",
                     "fire_shutters": "🔥 Fire: Escape Route Shutters (Will OPEN)"
+                }
+            },
+            "wall_panel": {
+                "title": "Dashboard & Wall Panel",
+                "description": "Use a tablet with the HA Companion App as an Aion Logic terminal.\n\n**Layer 1 (Scenario-based):** Always ON during the day, OFF at night or when away.\n**Layer 2 (With Motion Sensor):** Screen sleeps via Android timeout. Wakes up on motion, but stays discreet at night.",
+                "data": {
+                    "wall_panel_device": "Select the Tablet (notify.mobile_app_...)",
+                    "wall_panel_motion_sensor": "Optional: Motion Sensor (PIR/Radar for Layer 2)",
+                    "wall_panel_night_brightness": "Nighttime brightness (%)"
                 }
             },
             "drivers": {
