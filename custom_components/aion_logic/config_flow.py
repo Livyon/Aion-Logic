@@ -379,6 +379,7 @@ class AionLogicOptionsFlow(OptionsFlow):
                 "lifestyle": "💡 Lifestyle & Sfeer",
                 "air_quality": "🍃 Luchtkwaliteit & Ventilatie",
                 "safety": "🛡️ Veiligheid (Guard)",
+                "wall_panel": "📱 Dashboard & Wall Panel",
                 "drivers": "🚗 Auto's & Onderweg",
                 "energy": "⚡ Energie Optimalisatie",
                 "fallback": "🛡️ Noodloop (Fallback)"
@@ -604,6 +605,40 @@ class AionLogicOptionsFlow(OptionsFlow):
                 "warning_text": warning
             }
         )
+
+    async def async_step_wall_panel(self, user_input=None):
+        """Configureer het slimme dashboard."""
+        if user_input is not None:
+            if "wall_panel_motion_sensor" not in user_input:
+                user_input["wall_panel_motion_sensor"] = None
+            if "wall_panel_device" not in user_input:
+                user_input["wall_panel_device"] = None
+                
+            self.options.update(user_input)
+            self.hass.config_entries.async_update_entry(self.config_entry, options=self.options)
+            return await self.async_step_init()
+
+        services = self.hass.services.async_services()
+        notify_options =[]
+        if "notify" in services:
+            for service_name in services["notify"]:
+                notify_options.append({"value": f"notify.{service_name}", "label": service_name})
+        notify_options.sort(key=lambda x: x["label"])
+
+        schema = vol.Schema({
+            vol.Optional("wall_panel_device", description="De Tablet/Telefoon", default=self.options.get("wall_panel_device")): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=notify_options, multiple=False, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True
+                )
+            ),
+            vol.Optional("wall_panel_motion_sensor", description="Optionele PIR/Radar", default=self.options.get("wall_panel_motion_sensor")): selector.EntitySelector({
+                "domain": ["binary_sensor", "sensor"]
+            }),
+            vol.Required("wall_panel_night_brightness", default=self.options.get("wall_panel_night_brightness", 10)): selector.NumberSelector({
+                "min": 1, "max": 100, "step": 1, "mode": "slider", "unit_of_measurement": "%"
+            }),
+        })
+        return self.async_show_form(step_id="wall_panel", data_schema=schema)        
     
     async def async_step_drivers(self, user_input=None):
         """Configureer wie er rijdt."""
