@@ -39,6 +39,7 @@
                     "lifestyle": "💡 Lifestyle & Sfeer",
                     "air_quality": "🍃 Luchtkwaliteit & Ventilatie",
                     "safety": "Stap 10: 🛡️ Veiligheid & Active Guardian",
+                    "wall_panel": "📱 Dashboard & Wall Panel",
                     "drivers": "🚗 Auto's & Onderweg",
                     "energy": "⚡ Energie Optimalisatie",
                     "fallback": "🛡️ Noodloop (Fallback)"
@@ -162,6 +163,15 @@
                     "smoke_sensors": "🔥 Brand: Rookmelders",
                     "fire_lights": "🔥 Brand: Vluchtweg Verlichting (Gaat 100% AAN)",
                     "fire_shutters": "🔥 Brand: Vluchtweg Rolluiken (Gaan OPEN)"
+                }
+            },
+            "wall_panel": {
+                "title": "Dashboard & Wall Panel",
+                "description": "Gebruik een tablet met de HA Companion App als Aion Logic terminal.\n\n**Laag 1 (Puur Scenario):** Altijd AAN overdag, UIT 's nachts of bij afwezigheid.\n**Laag 2 (Met Bewegingsmelder):** Scherm valt in slaap via Android timeout. Licht op bij beweging, maar blijft discreet in de nacht.",
+                "data": {
+                    "wall_panel_device": "Selecteer de Tablet (notify.mobile_app_...)",
+                    "wall_panel_motion_sensor": "Optioneel: Bewegingsmelder (PIR/Radar voor Laag 2)",
+                    "wall_panel_night_brightness": "Helderheid 's nachts (%)"
                 }
             },
             "drivers": {
