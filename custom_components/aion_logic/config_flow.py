@@ -625,15 +625,21 @@ class AionLogicOptionsFlow(OptionsFlow):
                 notify_options.append({"value": f"notify.{service_name}", "label": service_name})
         notify_options.sort(key=lambda x: x["label"])
 
+        cur_device = self.options.get("wall_panel_device")
+        cur_motion = self.options.get("wall_panel_motion_sensor")
+        
+        def_device = cur_device if cur_device else vol.UNDEFINED
+        def_motion = cur_motion if cur_motion else vol.UNDEFINED
+        
         schema = vol.Schema({
-            vol.Optional("wall_panel_device", description="De Tablet/Telefoon", default=self.options.get("wall_panel_device")): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=notify_options, multiple=False, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True
-                )
-            ),
-            vol.Optional("wall_panel_motion_sensor", description="Optionele PIR/Radar", default=self.options.get("wall_panel_motion_sensor")): selector.EntitySelector({
-                "domain": ["binary_sensor", "sensor"]
-            }),
+            vol.Optional("wall_panel_device", description="De Tablet/Telefoon", default=def_device): selector.SelectSelector(
+                 selector.SelectSelectorConfig(
+                     options=notify_options, multiple=False, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True
+                 )
+             ),
+            vol.Optional("wall_panel_motion_sensor", description="Optionele PIR/Radar", default=def_motion): selector.EntitySelector({
+                 "domain":["binary_sensor", "sensor"]
+             }),
             vol.Required("wall_panel_night_brightness", default=self.options.get("wall_panel_night_brightness", 10)): selector.NumberSelector({
                 "min": 1, "max": 100, "step": 1, "mode": "slider", "unit_of_measurement": "%"
             }),
