@@ -1,4 +1,4 @@
-"""Switch platform voor Aion Logic™ (Legacy Base v2.2 + Guard v2.3)."""
+"""Switch platform voor Aion Logic™"""
 import logging
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.restore_state import RestoreEntity
