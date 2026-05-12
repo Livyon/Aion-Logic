@@ -418,6 +418,9 @@ class AionLogicCoordinator:
         if e := self.options.get("presence_sensors"): triggers.extend(e)
         if e := self.options.get("wifi_tracker_sensors"): triggers.extend(e)
 
+        if wp_motion := self.options.get("wall_panel_motion_sensor"):
+            triggers.append(wp_motion)
+            
         if triggers:
             self._listeners.append(async_track_state_change_event(self.hass, triggers, self.async_trigger_main_logic))
 
@@ -837,6 +840,8 @@ class AionLogicCoordinator:
             for e_id in smoke_list: payload["sensors"][e_id] = self._get_state(e_id)
         if alarm_id := config_data["safety"].get("alarm_panel_entity"):
              payload["sensors"][alarm_id] = self._get_state(alarm_id)
+        if wp_motion := self.options.get("wall_panel_motion_sensor"):
+             payload["sensors"][wp_motion] = self._get_state(wp_motion)
         for zone_data in self.options.values():
             if isinstance(zone_data, dict) and "window_sensors" in zone_data:
                 for w in zone_data["window_sensors"]: payload["sensors"][w] = self._get_state(w)
@@ -879,7 +884,10 @@ class AionLogicCoordinator:
         # <--- TOEVOEGING: Alarm Paneel Naam
         if alarm_id := config_data["safety"].get("alarm_panel_entity"):
              if state := self.hass.states.get(alarm_id): friendly_names[alarm_id] = state.name
-                 
+
+        if wp_motion := self.options.get("wall_panel_motion_sensor"):
+             if state := self.hass.states.get(wp_motion): friendly_names[wp_motion] = state.name
+                        
         payload["friendly_names"] = friendly_names     
 
         return payload
