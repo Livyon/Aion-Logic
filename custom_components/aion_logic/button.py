@@ -52,8 +52,7 @@ def _save_dashboard_file(hass: HomeAssistant, dashboard_yaml: str, room_count: i
         dest_dir = os.path.join(hass.config.path(), "custom_components", DOMAIN, "www")
         dest_path = os.path.join(dest_dir, DASHBOARD_PUBLIC_FILENAME)
         
-        if os.path.exists(dest_path):
-            return False, "Veiligheid: Het dashboard bestaat al. Hernoem of verwijder uw huidige 'aion_logic-dashboard-code.txt' eerst."
+        file_exists = os.path.exists(dest_path)
             
         if not os.path.exists(dest_dir):
             os.makedirs(dest_dir)
@@ -62,7 +61,10 @@ def _save_dashboard_file(hass: HomeAssistant, dashboard_yaml: str, room_count: i
             f.write(dashboard_yaml)
             
         link_url = f"/{DOMAIN}_assets/{DASHBOARD_PUBLIC_FILENAME}"
-        return True, f"Het dashboard is op maat gegenereerd voor {room_count} kamers.\n\n👉[**RECHTERMUISKNOP HIER -> OPEN IN NIEUW TABBLAD**]({link_url})\n\n*(Op mobiel: houd de link lang ingedrukt)*"
+        
+        if file_exists:
+            return True, f"⚠️ Waarschuwing: Bestaande dashboard template overschreven.\n\nNieuwe code gegenereerd voor {room_count} kamers.\n\n👉[**RECHTERMUISKNOP HIER -> OPEN IN NIEUW TABBLAD**]({link_url})\n\n*(Op mobiel: houd de link lang ingedrukt)*"
+        return True, f"Het dashboard is op maat gegenereerd voor {room_count} kamers.\n\n👉[**RECHTERMUISKNOP HIER -> OPEN IN NIEUW TABBLAD**]({link_url})\n\n*(Op mobiel: houd de link lang ingedrukt)*"        
         
     except Exception as e:
         _LOGGER.error(f"Fout bij opslaan dashboard: {e}")
