@@ -1,4 +1,4 @@
-"""Sensor platform voor Aion Logic™ (v2.3 Hybrid Guard)."""
+"""Sensor platform voor Aion Logic™"""
 import logging
 from datetime import time
 import homeassistant.util.dt as dt_util
