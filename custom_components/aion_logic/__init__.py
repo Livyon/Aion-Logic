@@ -1,4 +1,4 @@
-"""De Aion Logic™ Integratie (v2.4.3)."""
+"""De Aion Logic™ Integratie (v2.4.4)."""
 import logging
 import asyncio
 import os
@@ -45,7 +45,7 @@ async def async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Zet Aion Logic op vanuit een config entry."""
     
-    _LOGGER.info(f"Aion Logic v2.4.3 (Stable Node) aan het laden...")
+    _LOGGER.info(f"Aion Logic v2.4.4 (Stable Node) aan het laden...")
     
     api_client = AionLogicApiClient(
         entry.data.get(CONF_ACTIVATION_CODE), 
