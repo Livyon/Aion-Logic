@@ -144,6 +144,7 @@ class AionLogicCoordinator:
         self.cleanup_listeners()
         self._last_weather_temp = None 
         await self.setup_listeners()
+        await self.async_trigger_main_logic()
 
     async def async_handle_person_state_trigger(self, event):
         old_state = event.data.get("old_state")
