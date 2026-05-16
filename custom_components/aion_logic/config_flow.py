@@ -400,11 +400,12 @@ class AionLogicOptionsFlow(OptionsFlow):
     async def async_step_safety(self, user_input=None):
         """Handler voor Safety configuratie."""
         if user_input is not None:
-            if notify_input := user_input.get(CONF_SECURITY_NOTIFY):
+            user_dict = dict(user_input)
+            if notify_input := user_dict.get(CONF_SECURITY_NOTIFY):
                 if isinstance(notify_input, list):
-                    user_input[CONF_SECURITY_NOTIFY] = ", ".join(notify_input)
+                    user_dict[CONF_SECURITY_NOTIFY] = ", ".join(notify_input)
             
-            self.options.update(user_input)
+            self.options.update(user_dict)
             self.hass.config_entries.async_update_entry(self.config_entry, options=self.options)
             return await self.async_step_init()
 
@@ -609,12 +610,13 @@ class AionLogicOptionsFlow(OptionsFlow):
     async def async_step_wall_panel(self, user_input=None):
         """Configureer het slimme dashboard."""
         if user_input is not None:
-            if "wall_panel_motion_sensor" not in user_input:
-                user_input["wall_panel_motion_sensor"] = None
-            if "wall_panel_device" not in user_input:
-                user_input["wall_panel_device"] = None
+            user_dict = dict(user_input)
+            if "wall_panel_motion_sensor" not in user_dict:
+                user_dict["wall_panel_motion_sensor"] = None
+            if "wall_panel_device" not in user_dict:
+                user_dict["wall_panel_device"] = None
                 
-            self.options.update(user_input)
+            self.options.update(user_dict)
             self.hass.config_entries.async_update_entry(self.config_entry, options=self.options)
             return await self.async_step_init()
 
@@ -649,11 +651,12 @@ class AionLogicOptionsFlow(OptionsFlow):
     async def async_step_drivers(self, user_input=None):
         """Configureer wie er rijdt."""
         if user_input is not None:
+            user_dict = dict(user_input)
             # Veiligheid: Als velden leeg zijn, ook echt verwijderen uit de config
             for key in [CONF_DRIVER_1_SENSOR, CONF_DRIVER_1_TRIGGER, CONF_DRIVER_2_SENSOR, CONF_DRIVER_2_TRIGGER]:
-                if key not in user_input:
-                    user_input[key] = None
-            self.options.update(user_input)
+                if key not in user_dict:
+                    user_dict[key] = None
+            self.options.update(user_dict)
             self.hass.config_entries.async_update_entry(self.config_entry, options=self.options)
             return await self.async_step_init()
 
