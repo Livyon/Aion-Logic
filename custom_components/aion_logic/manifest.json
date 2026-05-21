@@ -8,5 +8,5 @@
     "iot_class": "cloud_polling",
     "issue_tracker": "https://sites.google.com/view/core-automations/over-ons-contact",
     "requirements": ["requests"],
-    "version": "2.4.4"
+    "version": "2.4.5"
 }
