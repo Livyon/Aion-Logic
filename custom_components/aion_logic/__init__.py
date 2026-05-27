@@ -800,6 +800,10 @@ class AionLogicCoordinator:
                     "_all_climate_entities": value.get("climate_entities", [])
                 }
 
+        raw_speakers = self.options.get(CONF_DEFENSE_SPEAKERS, [])
+        def_speakers = raw_speakers if isinstance(raw_speakers, list) else [raw_speakers]
+        speaker_vols = {s: self._get_state_attr(s, "volume_level") for s in def_speakers if s and self._get_state_attr(s, "volume_level") is not None}
+        
         # Final Payload
         payload = {
             "config": config_data, "context": context_data,
@@ -818,7 +822,8 @@ class AionLogicCoordinator:
                 "sun_elevation": sun_elevation,
                 "central_ventilation_unit": self.options.get("central_ventilation_unit"),
                 "central_vent_state": self._get_state(self.options.get("central_ventilation_unit")),
-                "humidity_control_enabled": self.options.get("enable_humidity_control", True)
+                "humidity_control_enabled": self.options.get("enable_humidity_control", True),
+                "speaker_volumes": speaker_vols
             }, 
             "persons": persons_data,
             "climate_zones": climate_zones_data,
