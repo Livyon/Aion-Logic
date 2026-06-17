@@ -159,6 +159,7 @@
                     "alarm_panel_entity": "Koppel Extern Alarm (Optioneel)",
                     "defense_lights": "🚨 Active Defense: Lichten (Afschrikken)",
                     "defense_speakers": "🚨 Active Defense: Kies speakers voor een luide sirene. Laat leeg voor een stil alarm.",
+                    "defense_sirens": "🚨 Active Defense: Dedicated Sirenes (Zigbee/Matter/Lokaal)",
                     "security_notify_service": "🚨 Wie waarschuwen? (Scheid meerdere services met een komma)",
                     "smoke_sensors": "🔥 Brand: Rookmelders",
                     "fire_lights": "🔥 Brand: Vluchtweg Verlichting (Gaat 100% AAN)",
