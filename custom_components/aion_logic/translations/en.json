@@ -196,6 +196,10 @@
                 "title": "Energy Optimization",
                 "description": "{warning_text}Apply extra heating during cheap energy hours or solar surplus.",
                 "data": {
+                    "p1_meter_sensor": "P1 Meter (Current Power W)",
+                    "solar_kwp": "Solar Panels Total (kWp)",
+                    "solar_orientation": "Solar Panel Orientation",
+                    "boiler_entity": "Smart Boiler / Heat Pump Boiler (Optional)",              
                     "energy_sensor": "Energy Sensor (Price/Solar)",
                     "energy_tag_value": "Trigger Value (e.g., 'low', 'on')"
                 }
