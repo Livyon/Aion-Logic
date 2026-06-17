@@ -232,7 +232,28 @@ class AionLogicCoordinator:
                 self._last_weather_temp = new_temp 
                 await self.async_trigger_main_logic(event) 
         except Exception: pass
-
+        
+    async def async_handle_energy_trigger(self, event):
+        """Smart Edge Trigger: Voorkomt Cloud-spam bij P1 fluctuaties."""
+        new_state_obj = event.data.get("new_state")
+        if not new_state_obj or new_state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN): return
+        
+        try:
+            new_power = float(new_state_obj.state)
+            last_trigger = getattr(self, "_last_energy_trigger", None)
+            now = dt_util.utcnow()
+            
+            # Rate-limit: Slechts 1x per 5 minuten de Cloud raadplegen bij hevig zonne-overschot of verbruik
+            if last_trigger and (now - last_trigger).total_seconds() < 300:
+                return
+                
+            # Trigger de cloud als we meer dan 500W verschil (positief of negatief afhankelijk van meter) zien
+            if abs(new_power) > 500:
+                self._last_energy_trigger = now
+                _LOGGER.info(f"⚡ Smart Edge Energy: Aanzienlijk vermogen geregistreerd ({new_power}W). Cloud raadplegen...")
+                await self.async_trigger_main_logic(event)
+        except Exception: pass
+    
     async def async_handle_motion_trigger(self, event):
         """Lokale, razendsnelle Smart Edge afhandeling van bewegingssensoren."""
         entity_id = event.data.get("entity_id")
@@ -497,6 +518,11 @@ class AionLogicCoordinator:
         if s2 := self.options.get(CONF_DRIVER_2_SENSOR): driver_sensors.append(s2)
         if driver_sensors:
             self._listeners.append(async_track_state_change_event(self.hass, driver_sensors, self.async_trigger_main_logic))
+            
+        # Smart Edge P1 Listener
+        if p1_sensor := self.options.get("p1_meter_sensor"):
+            _LOGGER.debug(f"Listener voor P1 Meter geregistreerd: {p1_sensor}")
+            self._listeners.append(async_track_state_change_event(self.hass, [p1_sensor], self.async_handle_energy_trigger))            
 
         # --- LOKALE LIFE-SAFETY TRIGGERS (Brand & Extern Alarm) ---
         safety_triggers =[]
@@ -610,7 +636,14 @@ class AionLogicCoordinator:
             "early_bird_sensors": self.options.get(CONF_EARLY_BIRD_SENSORS, []),
             "early_bird_window": self.options.get(CONF_EARLY_BIRD_WINDOW, 60)
         }
-
+        
+        config_data["energy_management"] = {
+            "p1_meter_sensor": self.options.get("p1_meter_sensor"),
+            "solar_kwp": self.options.get("solar_kwp", 0.0),
+            "solar_orientation": self.options.get("solar_orientation", "zuid"),
+            "boiler_entity": self.options.get("boiler_entity")
+        }
+        
         config_data["Auto"] = {
             "alarm_message": self.options.get(CONF_ALARM_MSG, "")
         }
@@ -832,6 +865,12 @@ class AionLogicCoordinator:
             "friendly_names": friendly_names,
             "guard_mode": self.options.get(CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS),
         }
+
+        if p1_sensor := self.options.get("p1_meter_sensor"):
+            payload["sensors"]["p1_power"] = self._get_state(p1_sensor)
+        if boiler := self.options.get("boiler_entity"):
+            payload["sensors"]["boiler_temp"] = self._get_state_attr(boiler, "current_temperature")
+            payload["sensors"]["boiler_state"] = self._get_state(boiler)        
         
         if self._needs_sync:
             payload["config"] = config_data
