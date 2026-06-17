@@ -157,6 +157,7 @@ def _get_safety_schema(options: dict, notify_services: list = None) -> vol.Schem
         vol.Optional(CONF_ALARM_PANEL, description="Of koppel Extern Alarm (bv. Alarmo)", default=default_alarm): selector.EntitySelector({"domain": "alarm_control_panel"}),
         vol.Optional(CONF_DEFENSE_LIGHTS, description="Lichten Knipperen (Stroboscoop)", default=_get_list(options, CONF_DEFENSE_LIGHTS)): selector.EntitySelector({"domain": ["light", "switch"], "multiple": True}),
         vol.Optional(CONF_DEFENSE_SPEAKERS, description="Speakers voor Sirene/TTS", default=_get_list(options, CONF_DEFENSE_SPEAKERS)): selector.EntitySelector({"domain": "media_player", "multiple": True}),
+        vol.Optional("defense_sirens", description="Sirenes (Zigbee/Matter/Lokaal)", default=_get_list(options, "defense_sirens")): selector.EntitySelector({"domain": "siren", "multiple": True}),
         vol.Required(CONF_SECURITY_NOTIFY, default=current_notify): selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=notify_services,
