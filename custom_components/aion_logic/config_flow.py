@@ -587,8 +587,12 @@ class AionLogicOptionsFlow(OptionsFlow):
         current_tag = self.options.get(CONF_ENERGY_TAG, "low") # Default gokje op 'low'
 
         schema = vol.Schema({
+            vol.Optional("p1_meter_sensor", description="P1 Meter (Actueel Vermogen W)"): selector.EntitySelector({"domain": "sensor", "device_class": "power"}),
+            vol.Optional("solar_kwp", description="Zonnepanelen Totaal (kWp)", default=self.options.get("solar_kwp", 0.0)): selector.NumberSelector({"min": 0.0, "max": 20.0, "step": 0.1, "mode": "box", "unit_of_measurement": "kWp"}),
+            vol.Optional("solar_orientation", description="Oriëntatie", default=self.options.get("solar_orientation", "zuid")): selector.SelectSelector(selector.SelectSelectorConfig(options=["zuid", "oost_west", "oost", "west", "zuid_oost", "zuid_west"], mode=selector.SelectSelectorMode.DROPDOWN)),
+            vol.Optional("boiler_entity", description="Slimme Boiler / Warmtepompboiler"): selector.EntitySelector({"domain": ["water_heater", "climate"]}),    
             # We maken de sensor optioneel, zodat mensen het ook leeg kunnen laten (Sla stap over)
-            vol.Optional(CONF_ENERGY_SENSOR, description={"suggested_value": current_sensor}): selector.EntitySelector({"domain": ["sensor", "binary_sensor"]}), 
+            vol.Optional(CONF_ENERGY_SENSOR, description="Of gebruik Dynamisch Tarief Sensor", default=current_sensor): selector.EntitySelector({"domain": ["sensor", "binary_sensor"]}),
             vol.Optional(CONF_ENERGY_TAG, default=current_tag): selector.TextSelector(),
         })
 
