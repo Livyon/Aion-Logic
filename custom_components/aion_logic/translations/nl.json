@@ -196,6 +196,10 @@
                 "title": "Energie Optimalisatie",
                 "description": "{warning_text}Verwarm extra bij goedkope energie of zonne-overschot.",
                 "data": {
+                    "p1_meter_sensor": "P1 Meter (Actueel Vermogen W)",
+                    "solar_kwp": "Zonnepanelen Totaal (kWp)",
+                    "solar_orientation": "Oriëntatie Zonnepanelen",
+                    "boiler_entity": "Slimme Boiler / Warmtepompboiler (Optioneel)",                    
                     "energy_sensor": "Energie Sensor (Prijs/Solar)",
                     "energy_tag_value": "Trigger Waarde (bv. 'low', 'on')"
                 }
