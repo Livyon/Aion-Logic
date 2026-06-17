@@ -159,6 +159,7 @@
                     "alarm_panel_entity": "Link External Alarm (Optional)",
                     "defense_lights": "🚨 Active Defense: Lights (Deterrent)",
                     "defense_speakers": "🚨 Active Defense: Select speakers for a loud siren. Leave empty for a silent alarm.",
+                    "defense_sirens": "🚨 Active Defense: Dedicated Sirenes (Zigbee/Matter/Local)",
                     "security_notify_service": "🚨 Who to notify? (Separate multiple services with a comma)",
                     "smoke_sensors": "🔥 Fire: Smoke Detectors",
                     "fire_lights": "🔥 Fire: Escape Route Lighting (Turns 100% ON)",
