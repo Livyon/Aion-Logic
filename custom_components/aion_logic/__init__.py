@@ -602,6 +602,7 @@ class AionLogicCoordinator:
             "alarm_panel_entity": self.options.get(CONF_ALARM_PANEL),
             "defense_lights": self.options.get(CONF_DEFENSE_LIGHTS, []),
             "defense_speakers": self.options.get(CONF_DEFENSE_SPEAKERS, []),
+            "defense_sirens": self.options.get("defense_sirens", []),
             "security_notify_service": self.options.get(CONF_SECURITY_NOTIFY, ""), 
             "smoke_sensors": self.options.get(CONF_SMOKE_SENSORS, []),
             "fire_lights": self.options.get(CONF_FIRE_LIGHTS, []),
@@ -1110,6 +1111,10 @@ class AionLogicCoordinator:
                         "media_content_id": f"/{DOMAIN}_assets/sirene_battleship.mp3", 
                         "media_content_type": "music"
                     }, blocking=False)
+                    
+                # 3. Dedicated Sirenes AAN
+                if sirens := self.options.get("defense_sirens"):
+                    await self.hass.services.async_call("siren", "turn_on", {"entity_id": sirens}, blocking=False)
 
         except Exception as e:
             _LOGGER.error(f"Fout bij uitvoeren lokale nood-actie: {e}")
