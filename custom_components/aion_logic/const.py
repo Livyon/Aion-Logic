@@ -60,6 +60,7 @@ CONF_DEFENSE_LIGHTS = "defense_lights"
 CONF_DEFENSE_SPEAKERS = "defense_speakers"
 CONF_ALARM_MSG = "alarm_message"
 CONF_SECURITY_NOTIFY = "security_notify_service"
+CONF_EMERGENCY_CONTACTS = "emergency_contacts"
 
 # 2. Brand (Fireman's Stop)
 CONF_SMOKE_SENSORS = "smoke_sensors"
