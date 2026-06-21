@@ -9,7 +9,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import selector, area_registry, entity_registry
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN, CONF_ACTIVATION_CODE, CONF_ENERGY_SENSOR, CONF_ENERGY_TAG, CONF_DRIVER_1_NAME, CONF_DRIVER_1_SENSOR, CONF_DRIVER_1_TRIGGER, CONF_DRIVER_1_NOTIFY, CONF_DRIVER_2_NAME, CONF_DRIVER_2_SENSOR, CONF_DRIVER_2_TRIGGER, CONF_DRIVER_2_NOTIFY, CONF_LS_COMING_HOME_ON, CONF_LS_COMING_HOME_AUTO, CONF_LS_COMING_HOME_SCENE, CONF_LS_COMING_HOME_BRIGHTNESS, CONF_LS_LEAVING_HOME_OFF, CONF_LS_LEAVING_HOME_AUTO, CONF_LS_LEAVING_HOME_SCENE, CONF_LS_NIGHT_OFF, CONF_LS_NIGHT_OFF_SCENE, CONF_LS_NIGHT_ON, CONF_LS_NIGHT_ON_SCENE, CONF_LS_NIGHT_ON_BRIGHTNESS, CONF_LS_NIGHT_AUTO, CONF_LS_MORNING_ON, CONF_LS_MORNING_SCENE, CONF_LS_MORNING_BRIGHTNESS, CONF_LS_MORNING_AUTO, CONF_LS_SUN_CHECK, CONF_DEFENSE_LIGHTS, CONF_DEFENSE_SPEAKERS, CONF_FIRE_LIGHTS, CONF_FIRE_SHUTTERS, CONF_ALARM_MSG, CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS, GUARD_MODE_MANUAL, GUARD_MODE_DISABLED, CONF_ALARM_PANEL, CONF_SMOKE_SENSORS, CONF_SECURITY_NOTIFY, CONF_CENTRAL_VENT, CONF_ENABLE_HUMIDITY, CONF_ENABLE_NIGHT_VENT, CONF_ZONE_VENT, CONF_HUMIDITY_SENSOR, CONF_FAMILY_CALENDAR, CONF_TRAVEL_SENSOR, CONF_DRIVER_OUTDOOR_MAX, CONF_DRIVER_INDOOR_MAX, CONF_EARLY_BIRD_SENSORS, CONF_EARLY_BIRD_WINDOW 
+from .const import DOMAIN, CONF_ACTIVATION_CODE, CONF_ENERGY_SENSOR, CONF_ENERGY_TAG, CONF_DRIVER_1_NAME, CONF_DRIVER_1_SENSOR, CONF_DRIVER_1_TRIGGER, CONF_DRIVER_1_NOTIFY, CONF_DRIVER_2_NAME, CONF_DRIVER_2_SENSOR, CONF_DRIVER_2_TRIGGER, CONF_DRIVER_2_NOTIFY, CONF_LS_COMING_HOME_ON, CONF_LS_COMING_HOME_AUTO, CONF_LS_COMING_HOME_SCENE, CONF_LS_COMING_HOME_BRIGHTNESS, CONF_LS_LEAVING_HOME_OFF, CONF_LS_LEAVING_HOME_AUTO, CONF_LS_LEAVING_HOME_SCENE, CONF_LS_NIGHT_OFF, CONF_LS_NIGHT_OFF_SCENE, CONF_LS_NIGHT_ON, CONF_LS_NIGHT_ON_SCENE, CONF_LS_NIGHT_ON_BRIGHTNESS, CONF_LS_NIGHT_AUTO, CONF_LS_MORNING_ON, CONF_LS_MORNING_SCENE, CONF_LS_MORNING_BRIGHTNESS, CONF_LS_MORNING_AUTO, CONF_LS_SUN_CHECK, CONF_DEFENSE_LIGHTS, CONF_DEFENSE_SPEAKERS, CONF_FIRE_LIGHTS, CONF_FIRE_SHUTTERS, CONF_ALARM_MSG, CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS, GUARD_MODE_MANUAL, GUARD_MODE_DISABLED, CONF_ALARM_PANEL, CONF_SMOKE_SENSORS, CONF_SECURITY_NOTIFY, CONF_EMERGENCY_CONTACTS, CONF_CENTRAL_VENT, CONF_ENABLE_HUMIDITY, CONF_ENABLE_NIGHT_VENT, CONF_ZONE_VENT, CONF_HUMIDITY_SENSOR, CONF_FAMILY_CALENDAR, CONF_TRAVEL_SENSOR, CONF_DRIVER_OUTDOOR_MAX, CONF_DRIVER_INDOOR_MAX, CONF_EARLY_BIRD_SENSORS, CONF_EARLY_BIRD_WINDOW 
 from .api import AionLogicApiClient, ApiAuthError, ApiConnectionError
 
 _LOGGER = logging.getLogger(__name__)
@@ -166,6 +166,7 @@ def _get_safety_schema(options: dict, notify_services: list = None) -> vol.Schem
                 custom_value=True
             )
         ),
+        vol.Optional(CONF_EMERGENCY_CONTACTS, description="Telefoonnummers Noodcontacten (Twilio VoIP/SMS, komma-gescheiden)", default=options.get(CONF_EMERGENCY_CONTACTS, "")): selector.TextSelector(),        
         
         # SECTIE 2: BRAND (Fireman's Stop)
         vol.Optional(CONF_SMOKE_SENSORS, description="Rookmelders", default=_get_list(options, CONF_SMOKE_SENSORS)): selector.EntitySelector({"domain": "binary_sensor", "multiple": True}),
@@ -200,6 +201,7 @@ def _get_zone_schema_generic(zone_data: dict, zone_slot_key: str = None) -> vol.
         vol.Optional("is_reference", default=zone_data.get("is_reference", False)): selector.BooleanSelector(),
         vol.Required("lookup_prefix", default=zone_data.get("lookup_prefix", "woonkamer")): selector.SelectSelector(selector.SelectSelectorConfig(options=SETPOINT_GROUPS, mode=selector.SelectSelectorMode.DROPDOWN)),
         vol.Optional("zone_ventilation", default=_safe_default("zone_ventilation")): selector.EntitySelector({"domain": ["fan", "switch", "select"]}),
+        vol.Optional("camera_entity", description="Zone Camera (Beeldverificatie Inbraak)", default=_safe_default("camera_entity")): selector.EntitySelector({"domain": "camera"}),
         vol.Optional("humidity_sensor", default=_safe_default("humidity_sensor")): selector.EntitySelector({"domain": ["sensor", "binary_sensor"],"device_class": ["humidity", "moisture"]}),
     })
 
@@ -519,11 +521,17 @@ class AionLogicOptionsFlow(OptionsFlow):
                 entry.entity_id for entry in er.entities.values() 
                 if entry.area_id == self.current_area_id and entry.domain in ["light", "switch"]
             ]
+            
+            found_cameras = [
+                entry.entity_id for entry in er.entities.values() 
+                if entry.area_id == self.current_area_id and entry.domain == "camera"
+            ]            
 
             defaults = {
                 "zone_name": area_name,
                 "climate_entities": found_climates,
                 "window_sensors": found_windows,
+                "camera_entity": found_cameras[0] if found_cameras else None,
                 "lighting_entities": found_lights,
                 "enable_boost": True,
                 "is_reference": False,
