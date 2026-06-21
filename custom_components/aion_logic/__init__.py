@@ -1183,10 +1183,15 @@ class AionLogicCoordinator:
         if is_window_trigger:
             to_state = new_state_obj.state if new_state_obj else "unknown"
             if to_state in [STATE_UNAVAILABLE, STATE_UNKNOWN]: return
-            await asyncio.sleep(30)
-            current_state = self._get_state(trigger_entity_id)
-            if (to_state == "on" and current_state == "off") or (to_state == "off" and current_state == "on"):
-                return
+            
+            dev_class = self._get_state_attr(trigger_entity_id, "device_class")
+            if dev_class == "vibration":
+                _LOGGER.debug(f"Trillingssensor '{trigger_entity_id}' gedetecteerd. Debounce overgeslagen.")
+            else:
+                await asyncio.sleep(30)
+                current_state = self._get_state(trigger_entity_id)
+                if (to_state == "on" and current_state == "off") or (to_state == "off" and current_state == "on"):
+                    return            
 
         if self._is_running: return
         self._is_running = True
