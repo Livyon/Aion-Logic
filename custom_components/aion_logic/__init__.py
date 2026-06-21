@@ -2,6 +2,7 @@
 import logging
 import asyncio
 import os
+import base64
 from typing import Any
 from datetime import time, timedelta 
 import json
@@ -27,7 +28,7 @@ from homeassistant.helpers.entity_registry import (
 )
 import homeassistant.util.dt as dt_util
 
-from .const import DOMAIN, CONF_ACTIVATION_CODE, CONF_ENERGY_SENSOR, CONF_ENERGY_TAG, CONF_DRIVER_1_NAME, CONF_DRIVER_1_SENSOR, CONF_DRIVER_1_TRIGGER, CONF_DRIVER_1_NOTIFY, CONF_DRIVER_2_NAME, CONF_DRIVER_2_SENSOR, CONF_DRIVER_2_TRIGGER, CONF_DRIVER_2_NOTIFY, CONF_LS_COMING_HOME_ON, CONF_LS_COMING_HOME_SCENE, CONF_LS_COMING_HOME_BRIGHTNESS, CONF_LS_LEAVING_HOME_OFF, CONF_LS_LEAVING_HOME_SCENE, CONF_LS_NIGHT_OFF, CONF_LS_NIGHT_OFF_SCENE, CONF_LS_NIGHT_ON, CONF_LS_NIGHT_ON_SCENE, CONF_LS_NIGHT_ON_BRIGHTNESS, CONF_LS_MORNING_ON, CONF_LS_MORNING_SCENE, CONF_LS_MORNING_BRIGHTNESS, CONF_LS_SUN_CHECK, CONF_ALARM_PANEL, CONF_DEFENSE_LIGHTS, CONF_DEFENSE_SPEAKERS, CONF_SMOKE_SENSORS, CONF_FIRE_LIGHTS, CONF_FIRE_SHUTTERS, CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS, GUARD_MODE_MANUAL, GUARD_MODE_DISABLED, CONF_SECURITY_NOTIFY, CONF_ALARM_MSG, CONF_CENTRAL_VENT, CONF_ENABLE_HUMIDITY, CONF_ZONE_VENT, CONF_HUMIDITY_SENSOR, CONF_ENABLE_NIGHT_VENT, CONF_FAMILY_CALENDAR, CONF_EARLY_BIRD_SENSORS, CONF_EARLY_BIRD_WINDOW, GHOST_WINDOW_SECONDS
+from .const import DOMAIN, CONF_ACTIVATION_CODE, CONF_ENERGY_SENSOR, CONF_ENERGY_TAG, CONF_DRIVER_1_NAME, CONF_DRIVER_1_SENSOR, CONF_DRIVER_1_TRIGGER, CONF_DRIVER_1_NOTIFY, CONF_DRIVER_2_NAME, CONF_DRIVER_2_SENSOR, CONF_DRIVER_2_TRIGGER, CONF_DRIVER_2_NOTIFY, CONF_LS_COMING_HOME_ON, CONF_LS_COMING_HOME_SCENE, CONF_LS_COMING_HOME_BRIGHTNESS, CONF_LS_LEAVING_HOME_OFF, CONF_LS_LEAVING_HOME_SCENE, CONF_LS_NIGHT_OFF, CONF_LS_NIGHT_OFF_SCENE, CONF_LS_NIGHT_ON, CONF_LS_NIGHT_ON_SCENE, CONF_LS_NIGHT_ON_BRIGHTNESS, CONF_LS_MORNING_ON, CONF_LS_MORNING_SCENE, CONF_LS_MORNING_BRIGHTNESS, CONF_LS_SUN_CHECK, CONF_ALARM_PANEL, CONF_DEFENSE_LIGHTS, CONF_DEFENSE_SPEAKERS, CONF_SMOKE_SENSORS, CONF_FIRE_LIGHTS, CONF_FIRE_SHUTTERS, CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS, GUARD_MODE_MANUAL, GUARD_MODE_DISABLED, CONF_SECURITY_NOTIFY, CONF_EMERGENCY_CONTACTS, CONF_ALARM_MSG, CONF_CENTRAL_VENT, CONF_ENABLE_HUMIDITY, CONF_ZONE_VENT, CONF_HUMIDITY_SENSOR, CONF_ENABLE_NIGHT_VENT, CONF_FAMILY_CALENDAR, CONF_EARLY_BIRD_SENSORS, CONF_EARLY_BIRD_WINDOW, GHOST_WINDOW_SECONDS
 from .api import AionLogicApiClient, ApiAuthError, ApiConnectionError, ApiTimeoutError
 
 _LOGGER = logging.getLogger(__name__)
@@ -629,7 +630,8 @@ class AionLogicCoordinator:
             "defense_lights": self.options.get(CONF_DEFENSE_LIGHTS, []),
             "defense_speakers": self.options.get(CONF_DEFENSE_SPEAKERS, []),
             "defense_sirens": self.options.get("defense_sirens", []),
-            "security_notify_service": self.options.get(CONF_SECURITY_NOTIFY, ""), 
+            "security_notify_service": self.options.get(CONF_SECURITY_NOTIFY, ""),
+            "emergency_contacts": self.options.get(CONF_EMERGENCY_CONTACTS, ""),
             "smoke_sensors": self.options.get(CONF_SMOKE_SENSORS, []),
             "fire_lights": self.options.get(CONF_FIRE_LIGHTS, []),
             "fire_shutters": self.options.get(CONF_FIRE_SHUTTERS, []),
@@ -1197,7 +1199,61 @@ class AionLogicCoordinator:
         self._is_running = True
         
         try:
+            # --- START FASE A & B: SENSOR FUSION & CAMERA REFLEX ---
+            level_2_intrusion = False
+            snapshot_b64 = None
+            snapshot_camera = None
+
+            if self.options.get(CONF_GUARD_MODE) != GUARD_MODE_DISABLED and trigger_entity_id:
+                for key, zone_cfg in self.options.items():
+                    if (key.startswith("area_") or key.startswith("zone_")) and isinstance(zone_cfg, dict):
+                        windows = zone_cfg.get("window_sensors", [])
+                        motions = zone_cfg.get("motion_sensors", [])
+                        camera_entity = zone_cfg.get("camera_entity")
+                        
+                        if trigger_entity_id in windows or trigger_entity_id in motions:
+                            # Kruisdetectie: Minimaal 1 raam open én minimaal 1 bewegingssensor actief
+                            any_window_open = any(self._get_state(w) == "on" for w in windows)
+                            any_motion_active = any(self._get_state(m) == "on" for m in motions)
+                            
+                            if any_window_open and any_motion_active:
+                                level_2_intrusion = True
+                                _LOGGER.warning(f"🚨 Sensor Fusion: Niveau 2 Inbraak in {zone_cfg.get('zone_name', 'Zone')}! Camera Reflex start...")
+                                
+                                if camera_entity:
+                                    try:
+                                        filename = self.hass.config.path(f"aion_reflex_{camera_entity.split('.')[1]}.jpg")
+                                        await asyncio.wait_for(
+                                            self.hass.services.async_call("camera", "snapshot", {"entity_id": camera_entity, "filename": filename}, blocking=True),
+                                            timeout=4.0
+                                        )
+                                        await asyncio.sleep(0.3) # Korte I/O buffer voor bestandsysteem
+                                        
+                                        if os.path.exists(filename):
+                                            with open(filename, "rb") as f:
+                                                snapshot_b64 = base64.b64encode(f.read()).decode('utf-8')
+                                            os.remove(filename) # Veilig opruimen
+                                            snapshot_camera = camera_entity
+                                            _LOGGER.info("📸 Camera Reflex succesvol: Base64 gegenereerd.")
+                                    except asyncio.TimeoutError:
+                                        _LOGGER.error("⏳ Camera Reflex Timeout! Snapshot duurde te lang, alarm wordt direct doorgezet.")
+                                    except Exception as e:
+                                        _LOGGER.error(f"Fout bij Camera Reflex: {e}")
+                                else:
+                                    _LOGGER.info("Geen camera gekoppeld. Niveau 2 payload zónder beeldverificatie.")
+                                break
+            # --- EINDE FASE A & B ---
+            
             payload = self._build_main_logic_payload(trigger_entity_id=trigger_entity_id)
+            
+            # Injecteer Level 2 & Camera info
+            payload["sensors"]["level_2_intrusion"] = level_2_intrusion
+            if snapshot_b64:
+                payload["camera_reflex"] = {
+                    "entity_id": snapshot_camera,
+                    "base64_image": snapshot_b64
+                }
+            
             had_config = "config" in payload  # Controleer of de volledige configuratie in de payload zit
             
             response = await self.api_client.trigger_main_logic(payload)
