@@ -90,7 +90,7 @@
                     "motion_auto_on": "💡 Auto-ON? (Disable to use the sensor as a smart off-timer only)",
                     "motion_only_when_dark": "🌙 Only when dark? (Uses sun position, ideal for rooms with windows)",
                     "motion_timer": "⏱️ Timer: Auto-off lights after (minutes)",
-                    "window_sensors": "Window/Door Sensors",
+                    "window_sensors": "Window/Door & Vibration Sensors",
                     "enable_boost": "Allow Boost in this room?",
                     "is_reference": "Referenceroom (Primary room start/stop proactive start)",
                     "day_start": "Day starts at",
