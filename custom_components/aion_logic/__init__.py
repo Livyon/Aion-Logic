@@ -379,8 +379,7 @@ class AionLogicCoordinator:
             services = []
             if sec_notify := self.options.get("security_notify_service"):
                 services.extend([s.strip() for s in sec_notify.split(',') if s.strip()])
-            if d1 := self.options.get("driver_1_notify"): services.append(d1)
-            if d2 := self.options.get("driver_2_notify"): services.append(d2)
+            # Ook hier drivers eruit gehaald voor het netjes wissen van notificaties
             
             for svc in set(services):
                 if not svc: continue
