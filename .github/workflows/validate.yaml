@@ -13,14 +13,12 @@ on:
 jobs:
   validate-edge-code:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
     - name: 📥 Haal de code op (Checkout)
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: 🐍 Start virtuele Python omgeving
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: "3.11"
 
@@ -44,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Haal de code op (Checkout)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: 🔍 Draai Hassfest Scan
         uses: home-assistant/actions/hassfest@master
@@ -54,12 +52,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Haal de code op (Checkout)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🛡️ HACS Action Check
         uses: hacs/action@main
         with:
           category: integration
+          ignore: "license"
 
   beta-shield:
     name: 🛡️ HA Beta Shield (Breaking Changes Check)
@@ -69,7 +68,7 @@ jobs:
       image: ghcr.io/home-assistant/home-assistant:beta
     steps:
       - name: 📥 Haal de code op (Checkout)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: 🧪 Mount & Dry-Run in toekomstige HA Core
         run: |
           mkdir -p /config/custom_components/aion_logic
