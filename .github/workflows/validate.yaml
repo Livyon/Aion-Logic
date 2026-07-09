@@ -12,6 +12,7 @@ on:
 
 jobs:
   validate-edge-code:
+    timeout-minutes: 10  
     runs-on: ubuntu-latest
     steps:
     - name: 📥 Haal de code op (Checkout)
@@ -39,6 +40,7 @@ jobs:
 
   hassfest:
     name: 🕵️‍♂️ Home Assistant Hassfest
+    timeout-minutes: 10    
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Haal de code op (Checkout)
@@ -49,6 +51,7 @@ jobs:
 
   hacs:
     name: 📦 HACS Validatie
+    timeout-minutes: 10    
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Haal de code op (Checkout)
@@ -62,6 +65,7 @@ jobs:
 
   beta-shield:
     name: 🛡️ HA Beta Shield (Breaking Changes Check)
+    timeout-minutes: 15    
     runs-on: ubuntu-latest
     continue-on-error: true # Voorkomt dat een falende beta je huidige productie-updates blokkeert
     container:
