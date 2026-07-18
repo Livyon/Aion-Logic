@@ -166,7 +166,7 @@ def _get_safety_schema(options: dict, notify_services: list = None) -> vol.Schem
                 custom_value=True
             )
         ),
-        vol.Optional(CONF_EMERGENCY_CONTACTS, description="Telefoonnummers Noodcontacten (Twilio VoIP/SMS, komma-gescheiden)", default=options.get(CONF_EMERGENCY_CONTACTS, "")): selector.TextSelector(),        
+        vol.Optional(CONF_EMERGENCY_CONTACTS, description="Telefoonnummers Noodcontacten (MessageBird VoIP/SMS, komma-gescheiden)", default=options.get(CONF_EMERGENCY_CONTACTS, "")): selector.TextSelector(),        
         
         # SECTIE 2: BRAND (Fireman's Stop)
         vol.Optional(CONF_SMOKE_SENSORS, description="Rookmelders", default=_get_list(options, CONF_SMOKE_SENSORS)): selector.EntitySelector({"domain": "binary_sensor", "multiple": True}),
