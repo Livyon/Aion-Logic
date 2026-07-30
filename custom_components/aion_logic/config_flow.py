@@ -152,6 +152,7 @@ def _get_safety_schema(options: dict, notify_services: list = None) -> vol.Schem
                 mode=selector.SelectSelectorMode.DROPDOWN
             )
         ),
+        vol.Optional("enable_ghost_occupancy", description="Vakantiesimulatie Activeren (Ghost Occupancy)", default=options.get("enable_ghost_occupancy", False)): selector.BooleanSelector(),      
 
         # HIER IS DE AANPASSING (default=default_alarm):
         vol.Optional(CONF_ALARM_PANEL, description="Of koppel Extern Alarm (bv. Alarmo)", default=default_alarm): selector.EntitySelector({"domain": "alarm_control_panel"}),
