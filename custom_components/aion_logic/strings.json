@@ -2,7 +2,7 @@
     "config": {
         "step": {
             "user": {
-                "title": "Aion Logic™ Activeren",
+                "title": "Aion Logic® Activeren",
                 "description": "Voer uw licentiecode in om te starten.",
                 "data": {
                     "activation_code": "Activatiecode"
@@ -29,7 +29,7 @@
     "options": {
         "step": {
             "init": {
-                "title": "Aion Logic™ Instellingen",
+                "title": "Aion Logic® Instellingen",
                 "description": "Actief Pakket: **{license_status}**\n\nKies een categorie om te configureren:",
                 "menu_options": {
                     "general": "⚙️ Algemeen, Personen & Tijden",
