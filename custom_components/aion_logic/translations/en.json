@@ -2,7 +2,7 @@
     "config": {
         "step": {
             "user": {
-                "title": "Activate Aion Logic™",
+                "title": "Activate Aion Logic®",
                 "description": "Enter your license code to get started.",
                 "data": {
                     "activation_code": "Activation Code"
@@ -29,7 +29,7 @@
     "options": {
         "step": {
             "init": {
-                "title": "Aion Logic™ Settings",
+                "title": "Aion Logic® Settings",
                 "description": "Active Package: **{license_status}**\n\nChoose a category to configure:",
                 "menu_options": {
                     "general": "⚙️ General, People & Times",
