@@ -640,7 +640,8 @@ class AionLogicCoordinator:
             "fire_lights": self.options.get(CONF_FIRE_LIGHTS, []),
             "fire_shutters": self.options.get(CONF_FIRE_SHUTTERS, []),
             "early_bird_sensors": self.options.get(CONF_EARLY_BIRD_SENSORS, []),
-            "early_bird_window": self.options.get(CONF_EARLY_BIRD_WINDOW, 60)
+            "early_bird_window": self.options.get(CONF_EARLY_BIRD_WINDOW, 60),
+            "enable_ghost_occupancy": self.options.get("enable_ghost_occupancy", False)
         }
         
         config_data["energy_management"] = {
