@@ -404,6 +404,11 @@ class AionLogicCoordinator:
             _LOGGER.info("😴 Gebruiker slaapt verder. Early Bird wordt geannuleerd.")
             self._cancel_early_bird_flag = True
             await self.async_trigger_main_logic(event)
+            
+        elif action == "AION_VACATION_YES":
+            _LOGGER.info("🏖️ Gebruiker bevestigt Vakantiemodus via notificatie.")
+            self._vacation_override = True
+            await self.async_trigger_main_logic(event)
 
     async def setup_listeners(self) -> None:
         _LOGGER.debug("Registreren van Aion Logic triggers...")
@@ -761,6 +766,10 @@ class AionLogicCoordinator:
             self._cancel_early_bird_flag = False
         else:
             context_data["cancel_early_bird"] = False
+
+        if getattr(self, "_vacation_override", False):
+            context_data["vacation_confirmed"] = True
+            self._vacation_override = False        
 
         weather_entity = self.options.get("weather_entity")
         outdoor_temp = float(self._get_state_attr(self.options.get("weather_entity"), "temperature", 15.0) or 15.0)
