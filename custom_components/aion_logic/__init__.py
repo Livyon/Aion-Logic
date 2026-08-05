@@ -869,8 +869,8 @@ class AionLogicCoordinator:
                 "travel_time_minutes": self._get_travel_time_minutes(self.options.get("travel_time_sensor")),
                 "sun_state": self._get_state("sun.sun") or "above_horizon",
                 "sun_elevation": sun_elevation,
-                "central_ventilation_unit": self.options.get("central_ventilation_unit"),
-                "central_vent_state": self._get_state(self.options.get("central_ventilation_unit")),
+                "central_ventilation_unit": self.options.get(CONF_CENTRAL_VENT),
+                "central_vent_state": self._get_state(self.options.get(CONF_CENTRAL_VENT)),
                 "humidity_control_enabled": self.options.get("enable_humidity_control", True),
                 "speaker_volumes": speaker_vols
             }, 
@@ -1582,17 +1582,27 @@ class AionLogicDiagnoseView(HomeAssistantView):
             
             report["checks"].append({"name": "Licentie Code", "status": "ok", "value": masked_code})
 
-            # --- CHECK 1: CORE ENTITEITEN (Hardcoded Switches) ---
+            # --- CHECK 1: CORE ENTITEITEN (Dynamische Resolutie) ---
+            entity_reg = async_get_entity_registry(hass)
+            guest_id = entity_reg.async_get_entity_id("switch", DOMAIN, f"{entry.entry_id}_guest_mode")
+            coming_id = entity_reg.async_get_entity_id("switch", DOMAIN, f"{entry.entry_id}_coming_home")
+            
             core_entities = [
-                ("switch.aion_logic_aion_guest_mode", "Guest Mode Switch"),
-                ("switch.aion_logic_aion_coming_home", "Coming Home Switch")
+                (guest_id, "Guest Mode Switch"),
+                (coming_id, "Coming Home Switch")
             ]
 
             for entity_id, label in core_entities:
+                if not entity_id:
+                    report["checks"].append({"name": label, "status": "error", "value": "Niet gevonden"})
+                    report["warnings"].append(f"⚠️ Core Entiteit '{label}' ontbreekt in het register. Is de integratie goed gestart?")
+                    report["status"] = "issue"
+                    continue
+                
                 state = hass.states.get(entity_id)
                 if state is None:
-                    report["checks"].append({"name": label, "status": "error", "value": "Niet gevonden"})
-                    report["warnings"].append(f"⚠️ Core Entiteit '{entity_id}' ontbreekt. Is de integratie goed gestart?")
+                    report["checks"].append({"name": label, "status": "error", "value": "Niet gevonden (State)"})
+                    report["warnings"].append(f"⚠️ Core Entiteit '{entity_id}' ontbreekt in de state machine.")
                     report["status"] = "issue"
                 elif state.state == "unavailable":
                     report["checks"].append({"name": label, "status": "warning", "value": "Unavailable"})
