@@ -159,6 +159,13 @@ def _get_safety_schema(options: dict, notify_services: list = None) -> vol.Schem
         vol.Optional(CONF_DEFENSE_LIGHTS, description="Lichten Knipperen (Stroboscoop)", default=_get_list(options, CONF_DEFENSE_LIGHTS)): selector.EntitySelector({"domain": ["light", "switch"], "multiple": True}),
         vol.Optional(CONF_DEFENSE_SPEAKERS, description="Speakers voor Sirene/TTS", default=_get_list(options, CONF_DEFENSE_SPEAKERS)): selector.EntitySelector({"domain": "media_player", "multiple": True}),
         vol.Optional("defense_sirens", description="Sirenes (Zigbee/Matter/Lokaal)", default=_get_list(options, "defense_sirens")): selector.EntitySelector({"domain": "siren", "multiple": True}),
+        
+        # ESCALATIE & VIRTUELE OPERATOR
+        vol.Optional("call_resident_on_alarm", description="Bel bewoner bij alarm (Wake-up call)", default=options.get("call_resident_on_alarm", True)): selector.BooleanSelector(),
+        vol.Optional("call_after_seconds", description="Wachttijd voor Push-Ack (seconden)", default=options.get("call_after_seconds", 15)): selector.NumberSelector({"min": 0, "max": 60, "step": 5, "mode": "slider", "unit_of_measurement": "sec"}),
+        vol.Optional("escalation_after_seconds", description="Wachttijd voor noodcontacten (seconden)", default=options.get("escalation_after_seconds", 30)): selector.NumberSelector({"min": 10, "max": 120, "step": 10, "mode": "slider", "unit_of_measurement": "sec"}),
+        vol.Optional("immediate_call_travel_time_minutes", description="Direct escaleren indien reistijd >", default=options.get("immediate_call_travel_time_minutes", 60)): selector.NumberSelector({"min": 15, "max": 120, "step": 15, "mode": "slider", "unit_of_measurement": "min"}),
+        
         vol.Required(CONF_SECURITY_NOTIFY, default=current_notify): selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=notify_services,
