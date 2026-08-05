@@ -38,7 +38,8 @@
                     "setpoints": "🌡️ Setpoint Profielen",
                     "lifestyle": "💡 Lifestyle & Sfeer",
                     "air_quality": "🍃 Luchtkwaliteit & Ventilatie",
-                    "safety": "Stap 10: 🛡️ Veiligheid & Active Guardian",
+                    "safety": "🛡️ Lokaal Alarm & Veiligheid",
+                    "virtual_operator": "📞 Virtuele Meldkamer (Escalatie)",
                     "wall_panel": "📱 Dashboard & Wall Panel",
                     "drivers": "🚗 Auto's & Onderweg",
                     "energy": "⚡ Energie Optimalisatie",
@@ -151,8 +152,8 @@
                 }
             },
             "safety": {
-                "title": "Veiligheid & Active Guardian",
-                "description": "{warning_text}Configureer hier uw alarm en beveiligingsfuncties.",
+                "title": "Lokaal Alarm & Veiligheid",
+                "description": "{warning_text}Configureer hier uw lokale alarm (hardware, sirenes, brand).",
                 "data": {
                     "enable_native_guard": "🛡️ Native Guard: Automatisch beveiligen bij afwezigheid (Gebruikt raamsensoren)",
                     "enable_native_night_guard": "🌙 Sleep Guard: Ramen beveiligen tijdens 'Nacht' scenario's (terwijl u slaapt)",
@@ -161,10 +162,21 @@
                     "defense_lights": "🚨 Active Defense: Lichten (Afschrikken)",
                     "defense_speakers": "🚨 Active Defense: Kies speakers voor een luide sirene. Laat leeg voor een stil alarm.",
                     "defense_sirens": "🚨 Active Defense: Dedicated Sirenes (Zigbee/Matter/Lokaal)",
-                    "security_notify_service": "🚨 Wie waarschuwen? (Scheid meerdere services met een komma)",
                     "smoke_sensors": "🔥 Brand: Rookmelders",
                     "fire_lights": "🔥 Brand: Vluchtweg Verlichting (Gaat 100% AAN)",
                     "fire_shutters": "🔥 Brand: Vluchtweg Rolluiken (Gaan OPEN)"
+                }
+            },
+            "virtual_operator": {
+                "title": "Virtuele Meldkamer & Escalatie",
+                "description": "{warning_text}Hoe moet Aion Logic escaleren in een noodsituatie?",
+                "data": {
+                    "security_notify_service": "📲 Wie de Pushmelding sturen? (Selecteer de mobiele telefoons)",
+                    "emergency_contacts": "📞 Noodcontacten (Telefoonnummers CM.com Voice/SMS, komma-gescheiden)",
+                    "call_resident_on_alarm": "Bel de bewoner op bij alarm (De Wake-Up Call)",
+                    "call_after_seconds": "⏱️ Wacht met bellen voor Push-Bevestiging (Seconden)",
+                    "escalation_after_seconds": "⏱️ Escalatie: Wacht met bellen noodcontacten (Seconden)",
+                    "immediate_call_travel_time_minutes": "🌍 Direct bellen als reistijd > (Minuten)"
                 }
             },
             "wall_panel": {
