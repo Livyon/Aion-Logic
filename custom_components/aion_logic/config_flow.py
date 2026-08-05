@@ -418,6 +418,8 @@ class AionLogicOptionsFlow(OptionsFlow):
             self.hass.config_entries.async_update_entry(self.config_entry, options=self.options)
             return await self.async_step_init()
 
+        guardian_state = self.hass.states.get("sensor.aion_guardian")
+        warning = ""
         if not guardian_state or "Comfort" in guardian_state.state or "Uitgeschakeld" in guardian_state.state:
             warning = "⚠️ **LET OP: Uw huidige pakket bevat geen Guardian functionaliteit.**\nDeze instellingen worden opgeslagen, maar zijn pas actief na een upgrade.\n\n"
         
@@ -454,9 +456,7 @@ class AionLogicOptionsFlow(OptionsFlow):
         return self.async_show_form(
             step_id="virtual_operator", 
             data_schema=_get_virtual_operator_schema(self.options, notify_options),
-            description_placeholders={
-                "warning_text": warning
-            }
+            description_placeholders={"warning_text": warning}
         )
 
     async def _async_show_form_step(self, user_input, step_id, schema_fn):
