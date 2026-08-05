@@ -38,7 +38,7 @@
                     "setpoints": "🌡️ Setpoint Profiles",
                     "lifestyle": "💡 Lifestyle & Ambiance",
                     "air_quality": "🍃 Air Quality & Ventilation",
-                    "safety": "Step 10: 🛡️ Safety & Active Guardian",
+                    "safety": "🛡️ Local Alarm & Safety",
                     "wall_panel": "📱 Dashboard & Wall Panel",
                     "drivers": "🚗 Cars & Commute",
                     "energy": "⚡ Energy Optimization",
@@ -161,10 +161,21 @@
                     "defense_lights": "🚨 Active Defense: Lights (Deterrent)",
                     "defense_speakers": "🚨 Active Defense: Select speakers for a loud siren. Leave empty for a silent alarm.",
                     "defense_sirens": "🚨 Active Defense: Dedicated Sirenes (Zigbee/Matter/Local)",
-                    "security_notify_service": "🚨 Who to notify? (Separate multiple services with a comma)",
                     "smoke_sensors": "🔥 Fire: Smoke Detectors",
                     "fire_lights": "🔥 Fire: Escape Route Lighting (Turns 100% ON)",
                     "fire_shutters": "🔥 Fire: Escape Route Shutters (Will OPEN)"
+                }
+            },
+            "virtual_operator": {
+                "title": "Virtual Operator & Escalation",
+                "description": "{warning_text}How should Aion Logic escalate in an emergency?",
+                "data": {
+                    "security_notify_service": "📲 Who gets the Push Notification? (Select mobile phones)",
+                    "emergency_contacts": "📞 Emergency Contacts (Phone numbers CM.com Voice/SMS, comma separated)",
+                    "call_resident_on_alarm": "Call the resident upon alarm (The Wake-Up Call)",
+                    "call_after_seconds": "⏱️ Wait before calling for Push-Ack (Seconds)",
+                    "escalation_after_seconds": "⏱️ Escalation: Wait before calling emergency contacts (Seconds)",
+                    "immediate_call_travel_time_minutes": "🌍 Call immediately if travel time > (Minutes)"
                 }
             },
             "wall_panel": {
