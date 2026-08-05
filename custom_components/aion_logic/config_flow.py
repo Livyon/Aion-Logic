@@ -158,28 +158,30 @@ def _get_safety_schema(options: dict, notify_services: list = None) -> vol.Schem
         vol.Optional(CONF_ALARM_PANEL, description="Of koppel Extern Alarm (bv. Alarmo)", default=default_alarm): selector.EntitySelector({"domain": "alarm_control_panel"}),
         vol.Optional(CONF_DEFENSE_LIGHTS, description="Lichten Knipperen (Stroboscoop)", default=_get_list(options, CONF_DEFENSE_LIGHTS)): selector.EntitySelector({"domain": ["light", "switch"], "multiple": True}),
         vol.Optional(CONF_DEFENSE_SPEAKERS, description="Speakers voor Sirene/TTS", default=_get_list(options, CONF_DEFENSE_SPEAKERS)): selector.EntitySelector({"domain": "media_player", "multiple": True}),
-        vol.Optional("defense_sirens", description="Sirenes (Zigbee/Matter/Lokaal)", default=_get_list(options, "defense_sirens")): selector.EntitySelector({"domain": "siren", "multiple": True}),
-        
-        # ESCALATIE & VIRTUELE OPERATOR
-        vol.Optional("call_resident_on_alarm", description="Bel bewoner bij alarm (Wake-up call)", default=options.get("call_resident_on_alarm", True)): selector.BooleanSelector(),
-        vol.Optional("call_after_seconds", description="Wachttijd voor Push-Ack (seconden)", default=options.get("call_after_seconds", 15)): selector.NumberSelector({"min": 0, "max": 60, "step": 5, "mode": "slider", "unit_of_measurement": "sec"}),
-        vol.Optional("escalation_after_seconds", description="Wachttijd voor noodcontacten (seconden)", default=options.get("escalation_after_seconds", 30)): selector.NumberSelector({"min": 10, "max": 120, "step": 10, "mode": "slider", "unit_of_measurement": "sec"}),
-        vol.Optional("immediate_call_travel_time_minutes", description="Direct escaleren indien reistijd >", default=options.get("immediate_call_travel_time_minutes", 60)): selector.NumberSelector({"min": 15, "max": 120, "step": 15, "mode": "slider", "unit_of_measurement": "min"}),
-        
-        vol.Required(CONF_SECURITY_NOTIFY, default=current_notify): selector.SelectSelector(
-            selector.SelectSelectorConfig(
-                options=notify_services,
-                multiple=True,
-                mode=selector.SelectSelectorMode.DROPDOWN,
-                custom_value=True
-            )
-        ),
-        vol.Optional(CONF_EMERGENCY_CONTACTS, description="Telefoonnummers Noodcontacten (CM.com VoIP/SMS, komma-gescheiden)", default=options.get(CONF_EMERGENCY_CONTACTS, "")): selector.TextSelector(),        
+        vol.Optional("defense_sirens", description="Sirenes (Zigbee/Matter/Lokaal)", default=_get_list(options, "defense_sirens")): selector.EntitySelector({"domain": "siren", "multiple": True}),        
         
         # SECTIE 2: BRAND (Fireman's Stop)
         vol.Optional(CONF_SMOKE_SENSORS, description="Rookmelders", default=_get_list(options, CONF_SMOKE_SENSORS)): selector.EntitySelector({"domain": "binary_sensor", "multiple": True}),
         vol.Optional(CONF_FIRE_LIGHTS, description="Vluchtweg Verlichting (AAN)", default=_get_list(options, CONF_FIRE_LIGHTS)): selector.EntitySelector({"domain": ["light", "switch"], "multiple": True}),
         vol.Optional(CONF_FIRE_SHUTTERS, description="Vluchtweg Rolluiken (OPEN)", default=_get_list(options, CONF_FIRE_SHUTTERS)): selector.EntitySelector({"domain": "cover", "multiple": True}),
+    })
+    
+def _get_virtual_operator_schema(options: dict, notify_services: list = None) -> vol.Schema:
+    """Schema voor de Virtuele Meldkamer & Escalatie."""
+    current_notify = options.get(CONF_SECURITY_NOTIFY, [])
+    if isinstance(current_notify, str):
+        current_notify = [x.strip() for x in current_notify.split(",") if x.strip()]
+    if notify_services is None: notify_services = []
+
+    return vol.Schema({
+        vol.Required(CONF_SECURITY_NOTIFY, default=current_notify): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=notify_services, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True)
+        ),
+        vol.Optional(CONF_EMERGENCY_CONTACTS, default=options.get(CONF_EMERGENCY_CONTACTS, "")): selector.TextSelector(),
+        vol.Optional("call_resident_on_alarm", default=options.get("call_resident_on_alarm", True)): selector.BooleanSelector(),
+        vol.Optional("call_after_seconds", default=options.get("call_after_seconds", 15)): selector.NumberSelector({"min": 0, "max": 60, "step": 5, "mode": "slider", "unit_of_measurement": "sec"}),
+        vol.Optional("escalation_after_seconds", default=options.get("escalation_after_seconds", 30)): selector.NumberSelector({"min": 10, "max": 120, "step": 10, "mode": "slider", "unit_of_measurement": "sec"}),
+        vol.Optional("immediate_call_travel_time_minutes", default=options.get("immediate_call_travel_time_minutes", 60)): selector.NumberSelector({"min": 15, "max": 120, "step": 15, "mode": "slider", "unit_of_measurement": "min"})
     })
 
 def _get_fallback_schema(options: dict) -> vol.Schema:
@@ -389,7 +391,8 @@ class AionLogicOptionsFlow(OptionsFlow):
                 # Pijler 4: Intelligentie (Advanced)
                 "lifestyle": "💡 Lifestyle & Sfeer",
                 "air_quality": "🍃 Luchtkwaliteit & Ventilatie",
-                "safety": "🛡️ Veiligheid (Guard)",
+                "safety": "🛡️ Lokaal Alarm & Veiligheid",
+                "virtual_operator": "📞 Virtuele Meldkamer",
                 "wall_panel": "📱 Dashboard & Wall Panel",
                 "drivers": "🚗 Auto's & Onderweg",
                 "energy": "⚡ Energie Optimalisatie",
@@ -409,44 +412,48 @@ class AionLogicOptionsFlow(OptionsFlow):
         return await self._async_show_form_step(user_input, "lifestyle", _get_lifestyle_schema, False)
     
     async def async_step_safety(self, user_input=None):
-        """Handler voor Safety configuratie."""
+        """Handler voor Lokale Safety configuratie."""
+        if user_input is not None:
+            self.options.update(user_input)
+            self.hass.config_entries.async_update_entry(self.config_entry, options=self.options)
+            return await self.async_step_init()
+
+        if not guardian_state or "Comfort" in guardian_state.state or "Uitgeschakeld" in guardian_state.state:
+            warning = "⚠️ **LET OP: Uw huidige pakket bevat geen Guardian functionaliteit.**\nDeze instellingen worden opgeslagen, maar zijn pas actief na een upgrade.\n\n"
+        
+        return self.async_show_form(
+            step_id="safety", 
+            data_schema=_get_safety_schema(self.options),
+            description_placeholders={"warning_text": warning}
+        )
+
+    async def async_step_virtual_operator(self, user_input=None):
+        """Handler voor de Virtuele Meldkamer (Cloud Escalatie)."""
         if user_input is not None:
             user_dict = dict(user_input)
             if notify_input := user_dict.get(CONF_SECURITY_NOTIFY):
                 if isinstance(notify_input, list):
                     user_dict[CONF_SECURITY_NOTIFY] = ", ".join(notify_input)
-            
             self.options.update(user_dict)
             self.hass.config_entries.async_update_entry(self.config_entry, options=self.options)
             return await self.async_step_init()
 
-        # Lijst met notify services ophalen (Bestaande logica)
         services = self.hass.services.async_services()
         notify_options = []
-        
         if "notify" in services:
             for service_name in services["notify"]:
-                # Maak de volledige naam: notify.mobile_app_jan
-                full_service = f"notify.{service_name}"
-                notify_options.append({"value": full_service, "label": service_name})
-        
-        # Sorteer op naam voor netheid
+                notify_options.append({"value": f"notify.{service_name}", "label": service_name})
         notify_options.sort(key=lambda x: x["label"])
 
-        # --- COMMERCIAL CHECK: GUARDIAN STATUS ---
         guardian_state = self.hass.states.get("sensor.aion_guardian")
         warning = ""
-        
-        # Als sensor niet bestaat, of op Comfort/Uitgeschakeld staat -> Waarschuwing
         if not guardian_state or "Comfort" in guardian_state.state or "Uitgeschakeld" in guardian_state.state:
-            warning = "⚠️ **LET OP: Uw huidige pakket bevat geen Guardian functionaliteit.**\nDeze instellingen worden opgeslagen, maar zijn pas actief na een upgrade.\n\n"
-        
-        # --- COMMERCIAL CHECK: NABU CASA STATUS ---
+            warning = "⚠️ **LET OP: Uw huidige pakket bevat geen Guardian functionaliteit.**\n\n"
         warning = self._get_cloud_warning() + warning
 
         return self.async_show_form(
-            step_id="safety", 
-            data_schema=_get_safety_schema(self.options, notify_options),
+            step_id="virtual_operator", 
+            data_schema=_get_virtual_operator_schema(self.options, notify_options),
             description_placeholders={
                 "warning_text": warning
             }
