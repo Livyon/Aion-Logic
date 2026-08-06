@@ -5,10 +5,14 @@ aion_logic_dynamic_background_theme:
   card-mod-theme: aion_logic_dynamic_background_theme
   card-mod-view-yaml: |
     .: |
-      /* 1. De Dynamische Achtergrond */
+      /* 1. De Dynamische Achtergrond (Bulletproof) */
       hui-masonry-view, hui-sidebar-view, hui-sections-view, hui-panel-view, hui-view {
-        /* Let op: Hier wordt de nieuwe sensor naam gebruikt! */
-        background: center / cover no-repeat fixed url("{{ states('sensor.aion_logic_background_url') }}") #161616 !important;
+        background-color: #161616 !important;
+        background-image: url("{{ states('sensor.aion_logic_background_url') }}") !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
         min-height: 100vh;
       }
 
