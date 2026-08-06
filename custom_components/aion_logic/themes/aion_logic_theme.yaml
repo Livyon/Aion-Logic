@@ -1,47 +1,6 @@
 aion_logic_dynamic_background_theme:
   # ===================================================================
-  # 1. CARD-MOD INTEGRATIE (DYNAMISCHE ACHTERGROND & POP-UPS)
-  # ===================================================================
-  card-mod-theme: aion_logic_dynamic_background_theme
-  card-mod-view-yaml: |
-    .: |
-      /* 1. De Dynamische Achtergrond (Bulletproof) */
-      hui-masonry-view, hui-sidebar-view, hui-sections-view, hui-panel-view, hui-view {
-        background-color: #161616 !important;
-        background-image: url("{{ states('sensor.aion_logic_background_url') }}") !important;
-        background-size: cover !important;
-        background-position: center !important;
-        background-repeat: no-repeat !important;
-        background-attachment: fixed !important;
-        min-height: 100vh;
-      }
-
-      /* 2. De Header (Transparant met blur) */
-      app-header {
-        background-color: rgba(22, 22, 22, 0.1) !important;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border-bottom: 1px solid rgba(255,255,255,0.01);
-      }
-      app-toolbar {
-        background: transparent !important;
-      }
-
-      /* 3. BUBBLE POP-UP TRANSPARANTIE (DE FIX) */
-      bubble-pop-up {
-        backdrop-filter: blur(20px);           /* Zorgt voor het wazige effect erachter */
-        -webkit-backdrop-filter: blur(20px);
-      }
-
-      bubble-pop-up ha-card {
-        /* AANGEPAST: 0.40 zorgt voor sterke transparantie (glas effect) */
-        background: rgba(22, 22, 22, 0.1) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Mooie diepe schaduw */
-      }
-
-  # ===================================================================
-  # 2. AION LOGIC THEMA INSTELLINGEN
+  # 1. AION LOGIC THEMA INSTELLINGEN
   # ===================================================================
 
   # Maak de standaard HA achtergrond transparant zodat Card-mod werkt
