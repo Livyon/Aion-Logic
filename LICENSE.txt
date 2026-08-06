@@ -3,7 +3,7 @@ PROPRIETARY SOFTWARE LICENSE AGREEMENT
 Copyright (c) 2025 - 2026 Core Automations. All Rights Reserved.
 
 1. OWNERSHIP & COPYRIGHT
-This software package ("Aion Logic Integration"), including all source code, documentation, logic, assets, and associated files, is the exclusive property of Core Automations. The intellectual and technical concepts contained herein are proprietary to Core Automations and are protected by Belgian and international copyright laws and trade secret provisions.
+This software package ("Aion Logic® Integration"), including all source code, documentation, logic, assets, and associated files, is the exclusive property of Core Automations. The intellectual and technical concepts contained herein are proprietary to Core Automations and are protected by Belgian and international copyright laws and trade secret provisions.
 
 2. GRANT OF LICENSE
 Permission is hereby granted to download and install a copy of this software (the "Software") solely for personal, non-commercial use within a local Home Assistant environment. The functional use of this Software is STRICTLY SUBJECT TO the possession of a valid, active subscription or Activation Code issued by Core Automations. 
