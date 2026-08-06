@@ -13,6 +13,7 @@ from homeassistant.const import (
     Platform, ATTR_ENTITY_ID, STATE_UNAVAILABLE, STATE_UNKNOWN,
     EVENT_HOMEASSISTANT_STARTED
 )
+from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.helpers.event import (
@@ -69,7 +70,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         StaticPathConfig(f"/{DOMAIN}_assets", static_path, cache_headers=False)
     ])
     _LOGGER.info(f"Assets geregistreerd op URL: /{DOMAIN}_assets")
-    
+
+    # Injecteer het autonome JavaScript bestand voor de dynamische achtergrond
+    add_extra_js_url(hass, f"/{DOMAIN}_assets/aion_background.js")
+        
     async def _start_aion_logic(_):
         """Wordt uitgevoerd zodra HA volledig is opgestart."""
         _LOGGER.info("Home Assistant is volledig gestart. Aion Logic activeert nu zijn triggers.")
