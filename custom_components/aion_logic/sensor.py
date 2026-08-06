@@ -64,11 +64,18 @@ class AionLogicBackgroundSensor(SensorEntity):
         self.hass = hass
         self._attr_unique_id = f"{entry.entry_id}_background_url"
         self._attr_device_info = scenario_sensor.device_info
-        self._attr_native_value = f"{ASSET_URL_PREFIX}/afwezig.jpg" 
+        self._attr_native_value = f"{ASSET_URL_PREFIX}/afwezig.jpg"
 
+    @property
+    def entity_picture(self):
+        """Zorgt dat Home Assistant deze sensor native als afbeelding herkent."""
+        return self._attr_native_value
+    
     def _format_scenario_to_filename(self, scenario_name: str) -> str:
         if not scenario_name or scenario_name == "Onbekend": return "afwezig.jpg" 
-        return f"{scenario_name.replace(' - ', '-').replace(' ', '-').lower()}.jpg"
+        # Filter emojis weg die de Cloud toevoegt (zoals ⚡ en 🚨)
+        clean_name = scenario_name.replace("⚡", "").replace("🚨", "").strip()
+        return f"{clean_name.replace(' - ', '-').replace(' ', '-').lower()}.jpg"
 
     @callback
     def _async_handle_event(self, event):
