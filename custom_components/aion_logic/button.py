@@ -82,10 +82,13 @@ def _copy_file_to_config(hass: HomeAssistant, source_dir: str, source_file: str,
             return False, f"Bronbestand niet gevonden: {source_file}"
         if not os.path.exists(dest_dir):
             os.makedirs(dest_dir)
-        if os.path.exists(dest_path):
-            return False, f"Veiligheid: Het bestand '{dest_file_name}' bestaat al. Hernoem of verwijder uw huidige bestand eerst."
+            
+        file_exists = os.path.exists(dest_path)
 
         shutil.copy2(source_path, dest_path)
+        
+        if file_exists:
+            return True, "Succesvol bijgewerkt (Bestaand thema overschreven)."
         return True, "Succesvol geïnstalleerd."
 
     except Exception as e:
