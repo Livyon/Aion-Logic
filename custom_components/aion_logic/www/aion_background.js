@@ -4,14 +4,27 @@ console.info("%c AION LOGIC: Dynamic Background Engine initialized ", "color: #7
 function setAionBackground(url) {
     if (!url || url.includes("unavailable") || url.includes("unknown")) return;
     
-    // Pas toe op de 'body' laag. Hierdoor schijnt hij door alle transparante HA-thema's heen, 
-    // en overleeft hij elke Shadow DOM update van Home Assistant.
-    document.body.style.setProperty('background-image', `url("${url}")`, 'important');
-    document.body.style.setProperty('background-size', 'cover', 'important');
-    document.body.style.setProperty('background-position', 'center', 'important');
-    document.body.style.setProperty('background-repeat', 'no-repeat', 'important');
-    document.body.style.setProperty('background-attachment', 'fixed', 'important');
-    document.body.style.setProperty('background-color', '#161616', 'important');
+    // Oplossing voor mobiele WebViews: vaste div i.p.v. background-attachment op body
+    let bgDiv = document.getElementById("aion-dynamic-bg");
+    if (!bgDiv) {
+        bgDiv = document.createElement("div");
+        bgDiv.id = "aion-dynamic-bg";
+        Object.assign(bgDiv.style, {
+            position: "fixed", top: "0", left: "0",
+            width: "100vw", height: "100vh", zIndex: "-1",
+            backgroundSize: "cover", backgroundPosition: "center",
+            backgroundRepeat: "no-repeat", backgroundColor: "#161616",
+            pointerEvents: "none",
+            transition: "background-image 0.8s ease-in-out"
+        });
+        document.body.appendChild(bgDiv);
+        
+        // Maak HA core transparant zodat de div zichtbaar is
+        document.body.style.setProperty('background', 'transparent', 'important');
+        document.body.style.setProperty('background-color', 'transparent', 'important');
+    }
+    
+    bgDiv.style.backgroundImage = `url("${url}")`;
 }
 
 // Verbind direct met de officiële Home Assistant WebSocket API
