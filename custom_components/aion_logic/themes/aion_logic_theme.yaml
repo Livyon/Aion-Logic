@@ -60,7 +60,7 @@ aion_logic_dynamic_background_theme:
   #--------------------------------------------------
   #-- Header, Navigatie & Sidebar --#
   #--------------------------------------------------
-  app-header-background-color: "rgba(0,0,0,0)"
+  app-header-background-color: "var(--primary-background-color)"
   app-header-text-color: "var(--primary-text-color)"
   app-header-border-bottom: "none"
   "--accent-color": "var(--primary-color)"
@@ -102,6 +102,12 @@ aion_logic_dynamic_background_theme:
   paper-item-icon-active-color: "var(--primary-text-color)"
   state-icon-color: "var(--paper-item-icon-color)"
   state-icon-active-color: "var(--primary-text-color)"
+
+  # [NIEUW] Specifiek voor actieve entiteiten (Amber / Aion-geel)
+  state-light-active-color: "var(--active-state-color)"
+  state-switch-active-color: "var(--active-state-color)"
+  state-binary_sensor-active-color: "var(--active-state-color)"
+
   label-badge-background-color: "var(--secondary-background-color)"
   label-badge-text-color: "var(--primary-text-color)"
   paper-icon-button-active-color: "var(--active-state-color)"
