@@ -434,9 +434,10 @@ class AionLogicOptionsFlow(OptionsFlow):
         if user_input is not None:
             user_dict = dict(user_input)
             
-            if CONF_EMERGENCY_CONTACTS not in user_dict:
-                user_dict[CONF_EMERGENCY_CONTACTS] = ""
-            
+            for key in [CONF_EMERGENCY_CONTACTS]:
+                if key not in user_dict or user_dict[key] == "":
+                    user_dict[key] = None
+                        
             if notify_input := user_dict.get(CONF_SECURITY_NOTIFY):
                 if isinstance(notify_input, list):
                     user_dict[CONF_SECURITY_NOTIFY] = ", ".join(notify_input)
