@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/Livyon/Aion-Logic/blob/main/custom_components/aion_logic/brands/icon.png" alt="Aion Logic Logo" width="150">
+  <img src="https://github.com/Livyon/Aion-Logic/blob/main/custom_components/aion_logic/brand/icon.png" alt="Aion Logic Logo" width="150">
 </p>
 
 <h1 align="center">Aion Logic® voor Home Assistant</h1>
