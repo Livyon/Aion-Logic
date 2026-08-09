@@ -433,6 +433,10 @@ class AionLogicOptionsFlow(OptionsFlow):
         """Handler voor de Virtuele Meldkamer (Cloud Escalatie)."""
         if user_input is not None:
             user_dict = dict(user_input)
+            
+            if CONF_EMERGENCY_CONTACTS not in user_dict:
+                user_dict[CONF_EMERGENCY_CONTACTS] = ""
+            
             if notify_input := user_dict.get(CONF_SECURITY_NOTIFY):
                 if isinstance(notify_input, list):
                     user_dict[CONF_SECURITY_NOTIFY] = ", ".join(notify_input)
