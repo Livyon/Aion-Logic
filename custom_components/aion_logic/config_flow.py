@@ -441,6 +441,11 @@ class AionLogicOptionsFlow(OptionsFlow):
             if not contact or not str(contact).strip():
                 user_dict.pop(CONF_EMERGENCY_CONTACTS, None)
                 self.options.pop(CONF_EMERGENCY_CONTACTS, None)
+                
+                if CONF_EMERGENCY_CONTACTS in self.config_entry.data:
+                    new_data = dict(self.config_entry.data)
+                    new_data.pop(CONF_EMERGENCY_CONTACTS, None)
+                    self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)                
             else:
                 user_dict[CONF_EMERGENCY_CONTACTS] = str(contact).strip()
                         
@@ -463,11 +468,6 @@ class AionLogicOptionsFlow(OptionsFlow):
         if not guardian_state or "Comfort" in guardian_state.state or "Uitgeschakeld" in guardian_state.state:
             warning = "⚠️ **LET OP: Uw huidige pakket bevat geen Guardian functionaliteit.**\n\n"
         warning = self._get_cloud_warning() + warning
-
-        current_contact = self.options.get(CONF_EMERGENCY_CONTACTS)
-        def_contact = vol.UNDEFINED
-        if current_contact and isinstance(current_contact, str) and current_contact.strip():
-            def_contact = current_contact
         
         return self.async_show_form(
             step_id="virtual_operator", 
