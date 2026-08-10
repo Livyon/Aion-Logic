@@ -1509,6 +1509,14 @@ class AionLogicCoordinator:
         if is_live_comms:
             # Verwijder de simulatie-vlag zodat de Cloud het als 100% ECHT behandelt
             real_payload.pop("simulation", None)
+            
+            for p_id in real_payload.get("persons", {}):
+                real_payload["persons"][p_id]["state"] = "not_home"
+            if "sensors" in real_payload:
+                real_payload["sensors"]["gasten_aanwezig"] = "off"
+                real_payload["sensors"]["guard_master"] = "on"
+            real_payload["guard_mode"] = "manual"
+            
         elif "simulation" in override_data:
             real_payload["simulation"] = override_data["simulation"]
         else:
