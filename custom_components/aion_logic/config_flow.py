@@ -464,6 +464,11 @@ class AionLogicOptionsFlow(OptionsFlow):
             warning = "⚠️ **LET OP: Uw huidige pakket bevat geen Guardian functionaliteit.**\n\n"
         warning = self._get_cloud_warning() + warning
 
+        current_contact = self.options.get(CONF_EMERGENCY_CONTACTS)
+        def_contact = vol.UNDEFINED
+        if current_contact and isinstance(current_contact, str) and current_contact.strip():
+            def_contact = current_contact
+        
         return self.async_show_form(
             step_id="virtual_operator", 
             data_schema=_get_virtual_operator_schema(self.options, notify_options),
