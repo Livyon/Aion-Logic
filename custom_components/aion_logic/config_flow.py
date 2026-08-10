@@ -179,7 +179,7 @@ def _get_virtual_operator_schema(options: dict, notify_services: list = None) ->
         vol.Required(CONF_SECURITY_NOTIFY, default=current_notify): selector.SelectSelector(
             selector.SelectSelectorConfig(options=notify_services, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True)
         ),
-        vol.Optional(CONF_EMERGENCY_CONTACTS, default=current_contact if current_contact else vol.UNDEFINED): 
+        vol.Optional(CONF_EMERGENCY_CONTACTS, default=current_contact if current_contact else vol.UNDEFINED): selector.TextSelector(), 
         vol.Optional("call_resident_on_alarm", default=options.get("call_resident_on_alarm", True)): selector.BooleanSelector(),
         vol.Optional("call_after_seconds", default=options.get("call_after_seconds", 15)): selector.NumberSelector({"min": 0, "max": 60, "step": 5, "mode": "slider", "unit_of_measurement": "sec"}),
         vol.Optional("escalation_after_seconds", default=options.get("escalation_after_seconds", 30)): selector.NumberSelector({"min": 10, "max": 120, "step": 10, "mode": "slider", "unit_of_measurement": "sec"}),
