@@ -174,13 +174,13 @@ def _get_virtual_operator_schema(options: dict, notify_services: list = None) ->
     if notify_services is None: notify_services = []
         
     current_contact = options.get(CONF_EMERGENCY_CONTACTS)
-    current_contact = "" if current_contact is None else str(current_contact)
+    def_contact = str(current_contact).strip() if current_contact else vol.UNDEFINED
         
     return vol.Schema({
         vol.Required(CONF_SECURITY_NOTIFY, default=current_notify): selector.SelectSelector(
             selector.SelectSelectorConfig(options=notify_services, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True)
         ),
-        vol.Optional(CONF_EMERGENCY_CONTACTS, default=current_contact): selector.TextSelector(), 
+        vol.Optional(CONF_EMERGENCY_CONTACTS, default=def_contact): selector.TextSelector(), 
         vol.Optional("call_resident_on_alarm", default=options.get("call_resident_on_alarm", True)): selector.BooleanSelector(),
         vol.Optional("call_after_seconds", default=options.get("call_after_seconds", 15)): selector.NumberSelector({"min": 0, "max": 60, "step": 5, "mode": "slider", "unit_of_measurement": "sec"}),
         vol.Optional("escalation_after_seconds", default=options.get("escalation_after_seconds", 30)): selector.NumberSelector({"min": 10, "max": 120, "step": 10, "mode": "slider", "unit_of_measurement": "sec"}),
@@ -438,7 +438,10 @@ class AionLogicOptionsFlow(OptionsFlow):
             user_dict = dict(user_input)
             
             contact = user_dict.get(CONF_EMERGENCY_CONTACTS)
-            user_dict[CONF_EMERGENCY_CONTACTS] = "" if contact is None else str(contact).strip()
+            if not contact or not str(contact).strip():
+                user_dict[CONF_EMERGENCY_CONTACTS] = None
+            else:
+                user_dict[CONF_EMERGENCY_CONTACTS] = str(contact).strip()
                         
             if notify_input := user_dict.get(CONF_SECURITY_NOTIFY):
                 if isinstance(notify_input, list):
