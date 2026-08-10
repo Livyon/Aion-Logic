@@ -1494,7 +1494,15 @@ class AionLogicCoordinator:
         
         if "config" in override_data:
             real_payload["config"].update(override_data["config"])
-            
+
+        if "context_overlay" in override_data:
+            real_payload["context"].update(override_data["context_overlay"])
+            trigger_id = override_data["context_overlay"].get("trigger_entity_id")
+            if trigger_id:
+                state = self.hass.states.get(trigger_id)
+                if "friendly_names" not in real_payload: real_payload["friendly_names"] = {}
+                real_payload["friendly_names"][trigger_id] = state.name if state else "Test Raamsensor"
+                    
         # --- DYNAMISCHE SCENARIO INJECTIE (Doorgeefluik) ---
         is_live_comms = (override_data.get("simulation") == "live_comms_test")
         
