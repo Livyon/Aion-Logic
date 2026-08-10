@@ -1496,7 +1496,12 @@ class AionLogicCoordinator:
             real_payload["config"].update(override_data["config"])
             
         # --- DYNAMISCHE SCENARIO INJECTIE (Doorgeefluik) ---
-        if "simulation" in override_data:
+        is_live_comms = (override_data.get("simulation") == "live_comms_test")
+        
+        if is_live_comms:
+            # Verwijder de simulatie-vlag zodat de Cloud het als 100% ECHT behandelt
+            real_payload.pop("simulation", None)
+        elif "simulation" in override_data:
             real_payload["simulation"] = override_data["simulation"]
         else:
             real_payload["simulation"] = "SHADOW_RUN" # Fallback voor oude knoppen
@@ -1513,7 +1518,12 @@ class AionLogicCoordinator:
             # 4. Filteren resultaat (Geen uitvoering!)
             actions = response.get("actions", [])
             scenario = response.get("scenario", "Onbekend")
-            
+
+            # 5. Live Comms Test: Voer ALLEEN communicatie-acties (telefoon/sms/push) lokaal uit
+            if is_live_comms:
+                safe_actions = [a for a in actions if a.get("service", "").startswith("notify.")]
+                await self._execute_actions(safe_actions, real_payload.get("climate_zones", {}))
+                        
             # We voeren _execute_actions NIET uit. We returnen het gewoon.
             return {
                 "success": True,
