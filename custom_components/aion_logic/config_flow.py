@@ -439,7 +439,8 @@ class AionLogicOptionsFlow(OptionsFlow):
             
             contact = user_dict.get(CONF_EMERGENCY_CONTACTS)
             if not contact or not str(contact).strip():
-                user_dict[CONF_EMERGENCY_CONTACTS] = None
+                user_dict.pop(CONF_EMERGENCY_CONTACTS, None)
+                self.options.pop(CONF_EMERGENCY_CONTACTS, None)
             else:
                 user_dict[CONF_EMERGENCY_CONTACTS] = str(contact).strip()
                         
