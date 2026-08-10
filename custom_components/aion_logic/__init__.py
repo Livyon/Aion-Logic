@@ -1517,6 +1517,10 @@ class AionLogicCoordinator:
                 real_payload["sensors"]["guard_master"] = "on"
             real_payload["guard_mode"] = "manual"
             
+            if "config" in real_payload and "safety" in real_payload["config"]:
+                real_payload["config"]["safety"]["call_after_seconds"] = 0
+                real_payload["config"]["safety"]["escalation_after_seconds"] = 0            
+            
         elif "simulation" in override_data:
             real_payload["simulation"] = override_data["simulation"]
         else:
