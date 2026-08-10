@@ -173,14 +173,15 @@ def _get_virtual_operator_schema(options: dict, notify_services: list = None) ->
         current_notify = [x.strip() for x in current_notify.split(",") if x.strip()]
     if notify_services is None: notify_services = []
         
-    current_contact = options.get(CONF_EMERGENCY_CONTACTS)
-    def_contact = str(current_contact).strip() if current_contact else vol.UNDEFINED
+    current_contact = options.get(CONF_EMERGENCY_CONTACTS, "")
+    if current_contact is None:
+        current_contact = ""
         
     return vol.Schema({
         vol.Required(CONF_SECURITY_NOTIFY, default=current_notify): selector.SelectSelector(
             selector.SelectSelectorConfig(options=notify_services, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True)
         ),
-        vol.Optional(CONF_EMERGENCY_CONTACTS, default=def_contact): selector.TextSelector(), 
+        vol.Optional(CONF_EMERGENCY_CONTACTS, description={"suggested_value": current_contact}): selector.TextSelector(), 
         vol.Optional("call_resident_on_alarm", default=options.get("call_resident_on_alarm", True)): selector.BooleanSelector(),
         vol.Optional("call_after_seconds", default=options.get("call_after_seconds", 15)): selector.NumberSelector({"min": 0, "max": 60, "step": 5, "mode": "slider", "unit_of_measurement": "sec"}),
         vol.Optional("escalation_after_seconds", default=options.get("escalation_after_seconds", 30)): selector.NumberSelector({"min": 10, "max": 120, "step": 10, "mode": "slider", "unit_of_measurement": "sec"}),
@@ -439,13 +440,7 @@ class AionLogicOptionsFlow(OptionsFlow):
             
             contact = user_dict.get(CONF_EMERGENCY_CONTACTS)
             if not contact or not str(contact).strip():
-                user_dict.pop(CONF_EMERGENCY_CONTACTS, None)
-                self.options.pop(CONF_EMERGENCY_CONTACTS, None)
-                
-                if CONF_EMERGENCY_CONTACTS in self.config_entry.data:
-                    new_data = dict(self.config_entry.data)
-                    new_data.pop(CONF_EMERGENCY_CONTACTS, None)
-                    self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)                
+                user_dict[CONF_EMERGENCY_CONTACTS] = ""                
             else:
                 user_dict[CONF_EMERGENCY_CONTACTS] = str(contact).strip()
                         
