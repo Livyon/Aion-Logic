@@ -172,12 +172,14 @@ def _get_virtual_operator_schema(options: dict, notify_services: list = None) ->
     if isinstance(current_notify, str):
         current_notify = [x.strip() for x in current_notify.split(",") if x.strip()]
     if notify_services is None: notify_services = []
-
+        
+    current_contact = options.get(CONF_EMERGENCY_CONTACTS)
+        
     return vol.Schema({
         vol.Required(CONF_SECURITY_NOTIFY, default=current_notify): selector.SelectSelector(
             selector.SelectSelectorConfig(options=notify_services, multiple=True, mode=selector.SelectSelectorMode.DROPDOWN, custom_value=True)
         ),
-        vol.Optional(CONF_EMERGENCY_CONTACTS, default=options.get(CONF_EMERGENCY_CONTACTS, "")): selector.TextSelector(),
+        vol.Optional(CONF_EMERGENCY_CONTACTS, default=current_contact if current_contact else vol.UNDEFINED): 
         vol.Optional("call_resident_on_alarm", default=options.get("call_resident_on_alarm", True)): selector.BooleanSelector(),
         vol.Optional("call_after_seconds", default=options.get("call_after_seconds", 15)): selector.NumberSelector({"min": 0, "max": 60, "step": 5, "mode": "slider", "unit_of_measurement": "sec"}),
         vol.Optional("escalation_after_seconds", default=options.get("escalation_after_seconds", 30)): selector.NumberSelector({"min": 10, "max": 120, "step": 10, "mode": "slider", "unit_of_measurement": "sec"}),
@@ -434,9 +436,11 @@ class AionLogicOptionsFlow(OptionsFlow):
         if user_input is not None:
             user_dict = dict(user_input)
             
-            for key in [CONF_EMERGENCY_CONTACTS]:
-                if key not in user_dict or user_dict[key] == "":
-                    user_dict[key] = None
+            contact = user_dict.get(CONF_EMERGENCY_CONTACTS)
+            if not contact: 
+                user_dict[CONF_EMERGENCY_CONTACTS] = None
+            else:
+                user_dict[CONF_EMERGENCY_CONTACTS] = str(contact).strip()
                         
             if notify_input := user_dict.get(CONF_SECURITY_NOTIFY):
                 if isinstance(notify_input, list):
