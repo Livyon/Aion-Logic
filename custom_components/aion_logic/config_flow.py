@@ -654,6 +654,8 @@ class AionLogicOptionsFlow(OptionsFlow):
                 user_dict["wall_panel_motion_sensor"] = None
             if "wall_panel_device" not in user_dict:
                 user_dict["wall_panel_device"] = None
+            if "wall_panel_doorbell_sensor" not in user_dict:
+                user_dict["wall_panel_doorbell_sensor"] = None                
                 
             self.options.update(user_dict)
             self.hass.config_entries.async_update_entry(self.config_entry, options=self.options)
@@ -668,9 +670,11 @@ class AionLogicOptionsFlow(OptionsFlow):
 
         cur_device = self.options.get("wall_panel_device")
         cur_motion = self.options.get("wall_panel_motion_sensor")
+        cur_doorbell = self.options.get("wall_panel_doorbell_sensor")
         
         def_device = cur_device if cur_device else vol.UNDEFINED
         def_motion = cur_motion if cur_motion else vol.UNDEFINED
+        def_doorbell = cur_doorbell if cur_doorbell else vol.UNDEFINED
         
         schema = vol.Schema({
             vol.Optional("wall_panel_device", description="De Tablet/Telefoon", default=def_device): selector.SelectSelector(
@@ -684,6 +688,11 @@ class AionLogicOptionsFlow(OptionsFlow):
             vol.Required("wall_panel_night_brightness", default=self.options.get("wall_panel_night_brightness", 10)): selector.NumberSelector({
                 "min": 1, "max": 100, "step": 1, "mode": "slider", "unit_of_measurement": "%"
             }),
+            vol.Optional("wall_panel_doorbell_sensor", default=def_doorbell): selector.EntitySelector({
+                 "domain":["binary_sensor", "sensor"]
+            }),
+            vol.Optional("wall_panel_doorbell_path", default=self.options.get("wall_panel_doorbell_path", "/lovelace/deurbel")): selector.TextSelector(),
+            vol.Optional("wall_panel_default_path", default=self.options.get("wall_panel_default_path", "/lovelace/home")): selector.TextSelector(),            
         })
         return self.async_show_form(step_id="wall_panel", data_schema=schema)        
     
