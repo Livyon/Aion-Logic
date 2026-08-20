@@ -689,7 +689,7 @@ class AionLogicOptionsFlow(OptionsFlow):
                 "min": 1, "max": 100, "step": 1, "mode": "slider", "unit_of_measurement": "%"
             }),
             vol.Optional("wall_panel_doorbell_sensor", default=def_doorbell): selector.EntitySelector({
-                 "domain":["binary_sensor", "sensor"]
+                 "domain": ["binary_sensor", "sensor", "event"]
             }),
             vol.Optional("wall_panel_doorbell_path", default=self.options.get("wall_panel_doorbell_path", "/lovelace/deurbel")): selector.TextSelector(),
             vol.Optional("wall_panel_default_path", default=self.options.get("wall_panel_default_path", "/lovelace/home")): selector.TextSelector(),            
