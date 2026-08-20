@@ -1011,10 +1011,10 @@ class AionLogicCoordinator:
                             await self.hass.services.async_call(d_domain, d_service, {"message": "command_screen_brightness_level", "data": {"command": 255}}, blocking=False)
                             await asyncio.sleep(0.5)
                             # 3. Navigeer
-                            await self.hass.services.async_call(d_domain, d_service, {"message": "command_webview_navigate", "data": {"command": d_path}}, blocking=False)
+                            await self.hass.services.async_call(d_domain, d_service, {"message": "command_webview", "data": {"command": d_path}}, blocking=False)
                         
                             async def _reset_panel(_):
-                                await self.hass.services.async_call(d_domain, d_service, {"message": "command_webview_navigate", "data": {"command": def_path}}, blocking=False)
+                                await self.hass.services.async_call(d_domain, d_service, {"message": "command_webview", "data": {"command": def_path}}, blocking=False)
                             from homeassistant.helpers.event import async_call_later
                             async_call_later(self.hass, 30, _reset_panel)                        
                     continue
