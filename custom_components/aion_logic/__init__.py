@@ -1003,8 +1003,14 @@ class AionLogicCoordinator:
                         def_path = data.get("default_path")
                         if wp_device and d_path and def_path:
                             d_domain, d_service = wp_device.split(".", 1)
+                        
+                            # 1. Wek het scherm                            
                             await self.hass.services.async_call(d_domain, d_service, {"message": "command_screen_on"}, blocking=False)
+                            await asyncio.sleep(0.5) # Adempauze voor de app/tablet
+                            # 2. Helderheid
                             await self.hass.services.async_call(d_domain, d_service, {"message": "command_screen_brightness_level", "data": {"command": 255}}, blocking=False)
+                            await asyncio.sleep(0.5)
+                            # 3. Navigeer
                             await self.hass.services.async_call(d_domain, d_service, {"message": "command_webview_navigate", "data": {"command": d_path}}, blocking=False)
                         
                             async def _reset_panel(_):
