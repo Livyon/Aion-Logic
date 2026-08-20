@@ -185,7 +185,10 @@
                 "data": {
                     "wall_panel_device": "Selecteer de Tablet (notify.mobile_app_...)",
                     "wall_panel_motion_sensor": "Optioneel: Bewegingsmelder (PIR/Radar voor Laag 2)",
-                    "wall_panel_night_brightness": "Helderheid 's nachts (%)"
+                    "wall_panel_night_brightness": "Helderheid 's nachts (%)",
+                    "wall_panel_doorbell_sensor": "🔔 Deurbel Sensor (Activeert popup stream)",
+                    "wall_panel_doorbell_path": "🔔 Pad naar deurbel camera (bv. /lovelace/deurbel)",
+                    "wall_panel_default_path": "🏠 Pad naar startscherm (bv. /lovelace/home)"                    
                 }
             },
             "drivers": {
