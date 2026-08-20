@@ -452,6 +452,9 @@ class AionLogicCoordinator:
         if wp_motion := self.options.get("wall_panel_motion_sensor"):
             triggers.append(wp_motion)
             
+        if wp_doorbell := self.options.get("wall_panel_doorbell_sensor"):
+            triggers.append(wp_doorbell)            
+            
         if triggers:
             self._listeners.append(async_track_state_change_event(self.hass, triggers, self.async_trigger_main_logic))
 
@@ -907,6 +910,8 @@ class AionLogicCoordinator:
              payload["sensors"][alarm_id] = self._get_state(alarm_id)
         if wp_motion := self.options.get("wall_panel_motion_sensor"):
              payload["sensors"][wp_motion] = self._get_state(wp_motion)
+        if wp_doorbell := self.options.get("wall_panel_doorbell_sensor"):
+             payload["sensors"][wp_doorbell] = self._get_state(wp_doorbell)            
         for zone_data in self.options.values():
             if isinstance(zone_data, dict) and "window_sensors" in zone_data:
                 for w in zone_data["window_sensors"]: payload["sensors"][w] = self._get_state(w)
@@ -952,7 +957,10 @@ class AionLogicCoordinator:
 
         if wp_motion := self.options.get("wall_panel_motion_sensor"):
              if state := self.hass.states.get(wp_motion): friendly_names[wp_motion] = state.name
-                        
+
+        if wp_doorbell := self.options.get("wall_panel_doorbell_sensor"):
+             if state := self.hass.states.get(wp_doorbell): friendly_names[wp_doorbell] = state.name
+                                
         payload["friendly_names"] = friendly_names     
 
         return payload
@@ -988,6 +996,21 @@ class AionLogicCoordinator:
                     if service == "delay": # Special case
                         sec = action.get("data", {}).get("seconds", 1)
                         await asyncio.sleep(sec)
+                    elif service == "wall_panel_popup":
+                        data = action.get("data", {})
+                        wp_device = data.get("device")
+                        d_path = data.get("doorbell_path")
+                        def_path = data.get("default_path")
+                        if wp_device and d_path and def_path:
+                            d_domain, d_service = wp_device.split(".", 1)
+                            await self.hass.services.async_call(d_domain, d_service, {"message": "command_screen_on"}, blocking=False)
+                            await self.hass.services.async_call(d_domain, d_service, {"message": "command_screen_brightness_level", "data": {"command": 255}}, blocking=False)
+                            await self.hass.services.async_call(d_domain, d_service, {"message": "command_webview_navigate", "data": {"command": d_path}}, blocking=False)
+                        
+                            async def _reset_panel(_):
+                                await self.hass.services.async_call(d_domain, d_service, {"message": "command_webview_navigate", "data": {"command": def_path}}, blocking=False)
+                            from homeassistant.helpers.event import async_call_later
+                            async_call_later(self.hass, 30, _reset_panel)                        
                     continue
 
                 domain, service_name = service.split('.', 1)
