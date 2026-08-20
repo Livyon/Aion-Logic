@@ -184,7 +184,10 @@
                 "data": {
                     "wall_panel_device": "Select the Tablet (notify.mobile_app_...)",
                     "wall_panel_motion_sensor": "Optional: Motion Sensor (PIR/Radar for Layer 2)",
-                    "wall_panel_night_brightness": "Nighttime brightness (%)"
+                    "wall_panel_night_brightness": "Nighttime brightness (%)",
+                    "wall_panel_doorbell_sensor": "🔔 Doorbell Sensor (Triggers popup stream)",
+                    "wall_panel_doorbell_path": "🔔 Path to doorbell camera (e.g., /lovelace/doorbell)",
+                    "wall_panel_default_path": "🏠 Path to home screen (e.g., /lovelace/home)"
                 }
             },
             "drivers": {
