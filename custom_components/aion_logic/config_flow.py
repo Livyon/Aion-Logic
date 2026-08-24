@@ -41,15 +41,15 @@ def _get_general_schema(options: dict) -> vol.Schema:
         vol.Required("person_entities", default=options.get("person_entities", [])): selector.EntitySelector({
             "domain": "person", "multiple": True
         }),
-        vol.Optional("presence_sensors", description="Extra sensoren (Tags/Deurcontacten)", default=options.get("presence_sensors", [])): selector.EntitySelector({
-            "domain": ["binary_sensor", "device_tracker", "sensor", "input_boolean"], 
+        vol.Optional("presence_sensors", description="Extra sensoren (Tags/Deurcontacten/Knoppen)", default=options.get("presence_sensors", [])): selector.EntitySelector({
+            "domain": ["binary_sensor", "device_tracker", "sensor", "input_boolean", "event"], 
             "multiple": True
         }),
         vol.Optional("enable_pet_mode", default=options.get("enable_pet_mode", False)): selector.BooleanSelector(),
         
         # 4. Slim Ontwaken (Early Bird)
         vol.Optional(CONF_EARLY_BIRD_SENSORS, default=options.get(CONF_EARLY_BIRD_SENSORS, [])): selector.EntitySelector({
-            "domain": ["light", "switch", "binary_sensor"], 
+            "domain": ["light", "switch", "binary_sensor", "event"], 
             "multiple": True
         }),
         vol.Required(CONF_EARLY_BIRD_WINDOW, default=options.get(CONF_EARLY_BIRD_WINDOW, 60)): selector.NumberSelector({
@@ -205,7 +205,7 @@ def _get_zone_schema_generic(zone_data: dict, zone_slot_key: str = None) -> vol.
         vol.Optional("zone_name", default=zone_data.get("zone_name", "")): selector.TextSelector(),
         vol.Optional("climate_entities", default=zone_data.get("climate_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain="climate", multiple=True)),
         vol.Optional("lighting_entities", description="Lichten die Aion mag bedienen (Alles Uit / Guardian)", default=zone_data.get("lighting_entities", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain=["light", "switch"], multiple=True)),
-        vol.Optional("motion_sensors", default=zone_data.get("motion_sensors", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)),
+        vol.Optional("motion_sensors", default=zone_data.get("motion_sensors", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain=["binary_sensor", "sensor", "event"], multiple=True)),
         vol.Optional("motion_lights", default=zone_data.get("motion_lights", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain=["light", "switch"], multiple=True)),
         vol.Optional("motion_auto_on", default=zone_data.get("motion_auto_on", True)): selector.BooleanSelector(),
         vol.Optional("motion_only_when_dark", default=zone_data.get("motion_only_when_dark", False)): selector.BooleanSelector(),
