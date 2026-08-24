@@ -16,6 +16,10 @@ GHOST_WINDOW_SECONDS = 180
 CONF_EARLY_BIRD_SENSORS = "early_bird_sensors"
 CONF_EARLY_BIRD_WINDOW = "early_bird_window"
 
+# Perimeter (Buiten)
+CONF_PERIMETER_SENSORS = "perimeter_sensors"
+CONF_PERIMETER_COOLDOWN = "perimeter_cooldown"
+
 # Drivers
 CONF_DRIVER_1_NAME = "driver_1_name"
 CONF_DRIVER_1_SENSOR = "driver_1_sensor"
