@@ -157,6 +157,8 @@
                     "enable_native_guard": "🛡️ Native Guard: Auto-secure when away (Uses window sensors)",
                     "enable_native_night_guard": "🌙 Sleep Guard: Secure windows during 'Night' scenarios (while you sleep)",
                     "enable_ghost_occupancy": "Activate Vacation Simulation (Ghost Occupancy)",
+                    "perimeter_sensors": "📹 Perimeter: Outdoor Cameras & Doorbells (Pre-Warning)",
+                    "perimeter_cooldown": "⏱️ Perimeter Cooldown: Pause between notifications (minutes)",
                     "alarm_panel_entity": "Link External Alarm (Optional)",
                     "defense_lights": "🚨 Active Defense: Lights (Deterrent)",
                     "defense_speakers": "🚨 Active Defense: Select speakers for a loud siren. Leave empty for a silent alarm.",
