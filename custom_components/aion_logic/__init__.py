@@ -29,7 +29,7 @@ from homeassistant.helpers.entity_registry import (
 )
 import homeassistant.util.dt as dt_util
 
-from .const import DOMAIN, CONF_ACTIVATION_CODE, CONF_ENERGY_SENSOR, CONF_ENERGY_TAG, CONF_DRIVER_1_NAME, CONF_DRIVER_1_SENSOR, CONF_DRIVER_1_TRIGGER, CONF_DRIVER_1_NOTIFY, CONF_DRIVER_2_NAME, CONF_DRIVER_2_SENSOR, CONF_DRIVER_2_TRIGGER, CONF_DRIVER_2_NOTIFY, CONF_LS_COMING_HOME_ON, CONF_LS_COMING_HOME_SCENE, CONF_LS_COMING_HOME_BRIGHTNESS, CONF_LS_LEAVING_HOME_OFF, CONF_LS_LEAVING_HOME_SCENE, CONF_LS_NIGHT_OFF, CONF_LS_NIGHT_OFF_SCENE, CONF_LS_NIGHT_ON, CONF_LS_NIGHT_ON_SCENE, CONF_LS_NIGHT_ON_BRIGHTNESS, CONF_LS_MORNING_ON, CONF_LS_MORNING_SCENE, CONF_LS_MORNING_BRIGHTNESS, CONF_LS_SUN_CHECK, CONF_ALARM_PANEL, CONF_DEFENSE_LIGHTS, CONF_DEFENSE_SPEAKERS, CONF_SMOKE_SENSORS, CONF_FIRE_LIGHTS, CONF_FIRE_SHUTTERS, CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS, GUARD_MODE_MANUAL, GUARD_MODE_DISABLED, CONF_SECURITY_NOTIFY, CONF_EMERGENCY_CONTACTS, CONF_ALARM_MSG, CONF_CENTRAL_VENT, CONF_ENABLE_HUMIDITY, CONF_ZONE_VENT, CONF_HUMIDITY_SENSOR, CONF_ENABLE_NIGHT_VENT, CONF_FAMILY_CALENDAR, CONF_EARLY_BIRD_SENSORS, CONF_EARLY_BIRD_WINDOW, GHOST_WINDOW_SECONDS
+from .const import DOMAIN, CONF_ACTIVATION_CODE, CONF_ENERGY_SENSOR, CONF_ENERGY_TAG, CONF_DRIVER_1_NAME, CONF_DRIVER_1_SENSOR, CONF_DRIVER_1_TRIGGER, CONF_DRIVER_1_NOTIFY, CONF_DRIVER_2_NAME, CONF_DRIVER_2_SENSOR, CONF_DRIVER_2_TRIGGER, CONF_DRIVER_2_NOTIFY, CONF_LS_COMING_HOME_ON, CONF_LS_COMING_HOME_SCENE, CONF_LS_COMING_HOME_BRIGHTNESS, CONF_LS_LEAVING_HOME_OFF, CONF_LS_LEAVING_HOME_SCENE, CONF_LS_NIGHT_OFF, CONF_LS_NIGHT_OFF_SCENE, CONF_LS_NIGHT_ON, CONF_LS_NIGHT_ON_SCENE, CONF_LS_NIGHT_ON_BRIGHTNESS, CONF_LS_MORNING_ON, CONF_LS_MORNING_SCENE, CONF_LS_MORNING_BRIGHTNESS, CONF_LS_SUN_CHECK, CONF_ALARM_PANEL, CONF_DEFENSE_LIGHTS, CONF_DEFENSE_SPEAKERS, CONF_SMOKE_SENSORS, CONF_FIRE_LIGHTS, CONF_FIRE_SHUTTERS, CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS, GUARD_MODE_MANUAL, GUARD_MODE_DISABLED, CONF_SECURITY_NOTIFY, CONF_EMERGENCY_CONTACTS, CONF_ALARM_MSG, CONF_CENTRAL_VENT, CONF_ENABLE_HUMIDITY, CONF_ZONE_VENT, CONF_HUMIDITY_SENSOR, CONF_ENABLE_NIGHT_VENT, CONF_FAMILY_CALENDAR, CONF_EARLY_BIRD_SENSORS, CONF_EARLY_BIRD_WINDOW, GHOST_WINDOW_SECONDS, CONF_PERIMETER_SENSORS, CONF_PERIMETER_COOLDOWN
 from .api import AionLogicApiClient, ApiAuthError, ApiConnectionError, ApiTimeoutError
 
 _LOGGER = logging.getLogger(__name__)
@@ -122,6 +122,7 @@ class AionLogicCoordinator:
         self._active_simulation = None
         self._needs_sync = True
         self._motion_timers = {}
+        self._perimeter_timers = {}
         
         # --- GHOST BOUNCE & RESTART PROTECTION ---
         self._startup_time = dt_util.utcnow()
@@ -142,6 +143,7 @@ class AionLogicCoordinator:
             if timer_remove:
                 timer_remove()
         self._motion_timers = {}
+        self._perimeter_timers = {}
 
     async def update_options(self, new_options: dict) -> None:
         self.options = new_options
@@ -439,6 +441,29 @@ class AionLogicCoordinator:
                     self.hass, early_bird_sensors, async_handle_early_bird
                 )
             )
+            
+        if perimeter_sensors := self.options.get(CONF_PERIMETER_SENSORS, []):
+            async def async_handle_perimeter(event):
+                new_state = event.data.get("new_state")
+                entity_id = event.data.get("entity_id")
+                
+                # Negatieve check pakt "on", "true", "detected", "person_detected" etc.
+                if not new_state or str(new_state.state).lower() in ("unavailable", "unknown", "off", "false", "idle", "none", ""): return
+                
+                cooldown_mins = int(self.options.get(CONF_PERIMETER_COOLDOWN, 15))
+                now = dt_util.utcnow()
+                last_trigger = self._perimeter_timers.get(entity_id)
+                
+                if cooldown_mins > 0 and last_trigger and (now - last_trigger).total_seconds() < (cooldown_mins * 60):
+                    _LOGGER.debug(f"📹 Perimeter sensor {entity_id} genegeerd (Cooldown actief).")
+                    return
+                    
+                self._perimeter_timers[entity_id] = now
+                _LOGGER.info(f"📹 Perimeter sensor {entity_id} geactiveerd. Cloud raadplegen...")
+                await self.async_trigger_main_logic(event)
+
+            _LOGGER.debug(f"Listener geregistreerd voor Perimeter Sensoren: {len(perimeter_sensors)} sensoren.")
+            self._listeners.append(async_track_state_change_event(self.hass, perimeter_sensors, async_handle_perimeter))            
         
         triggers = []
         # Main switches
@@ -648,6 +673,7 @@ class AionLogicCoordinator:
             "fire_shutters": self.options.get(CONF_FIRE_SHUTTERS, []),
             "early_bird_sensors": self.options.get(CONF_EARLY_BIRD_SENSORS, []),
             "early_bird_window": self.options.get(CONF_EARLY_BIRD_WINDOW, 60),
+            CONF_PERIMETER_SENSORS: self.options.get(CONF_PERIMETER_SENSORS, []),
             "enable_ghost_occupancy": self.options.get("enable_ghost_occupancy", False),
             "call_resident_on_alarm": self.options.get("call_resident_on_alarm", True),
             "call_after_seconds": self.options.get("call_after_seconds", 15),
@@ -911,7 +937,9 @@ class AionLogicCoordinator:
         if wp_motion := self.options.get("wall_panel_motion_sensor"):
              payload["sensors"][wp_motion] = self._get_state(wp_motion)
         if wp_doorbell := self.options.get("wall_panel_doorbell_sensor"):
-             payload["sensors"][wp_doorbell] = self._get_state(wp_doorbell)            
+             payload["sensors"][wp_doorbell] = self._get_state(wp_doorbell)
+        if perim_list := config_data["safety"].get(CONF_PERIMETER_SENSORS, []):
+            for e_id in perim_list: payload["sensors"][e_id] = self._get_state(e_id)            
         for zone_data in self.options.values():
             if isinstance(zone_data, dict) and "window_sensors" in zone_data:
                 for w in zone_data["window_sensors"]: payload["sensors"][w] = self._get_state(w)
@@ -960,6 +988,10 @@ class AionLogicCoordinator:
 
         if wp_doorbell := self.options.get("wall_panel_doorbell_sensor"):
              if state := self.hass.states.get(wp_doorbell): friendly_names[wp_doorbell] = state.name
+             
+        if perimeters := config_data["safety"].get(CONF_PERIMETER_SENSORS, []):
+             for p_id in perimeters:
+                 if state := self.hass.states.get(p_id): friendly_names[p_id] = state.name                 
                                 
         payload["friendly_names"] = friendly_names     
 
