@@ -265,7 +265,23 @@ class AionLogicCoordinator:
         """Lokale, razendsnelle Smart Edge afhandeling van bewegingssensoren."""
         entity_id = event.data.get("entity_id")
         new_state = event.data.get("new_state")
-        if not new_state or new_state.state not in ("on", "off"): return
+        old_state = event.data.get("old_state")
+        
+        if not new_state or new_state.state in ("unknown", "unavailable"): return
+        
+        is_event = entity_id.startswith("event.")
+        eff_state = "off"
+        
+        if is_event:
+            # Event domeinen veranderen hun status naar een tijdstempel bij activatie
+            if old_state and new_state.state != old_state.state:
+                eff_state = "on"
+            else:
+                return
+        else:
+            # Ondersteuning voor "detected" (Frigate/Ezviz) naast standaard "on"
+            if new_state.state not in ("on", "off", "detected", "clear"): return
+            eff_state = "on" if new_state.state in ("on", "detected") else "off"
 
         # 1. Zoek bij welke zone deze sensor hoort
         target_zone_id = None
@@ -281,7 +297,7 @@ class AionLogicCoordinator:
         if not (motion_lights := zone_config.get("motion_lights", [])): return
         
         # 2. BEWEGING GEDETECTEERD (Licht Direct AAN)
-        if new_state.state == "on":
+        if eff_state == "on":
             if cancel_timer := self._motion_timers.get(target_zone_id):
                 cancel_timer()
                 self._motion_timers[target_zone_id] = None
@@ -310,9 +326,21 @@ class AionLogicCoordinator:
                     if switches: await self.hass.services.async_call("homeassistant", "turn_on", {"entity_id": switches}, blocking=False)
             else:
                 _LOGGER.debug(f"🏃‍♂️ Beweging in {target_zone_id} ({entity_id}). Timer gepauzeerd (Auto-AAN is uitgeschakeld).")
+
+            if is_event:
+                delay_minutes = int(zone_config.get("motion_timer", 2))
+                _LOGGER.debug(f"⏳ Event trigger {entity_id}. Auto-Off timer direct gestart ({delay_minutes} min).")
+                
+                async def _turn_off_lights_event(_):
+                    _LOGGER.info(f"💡 Event-Timer verlopen voor {target_zone_id}. Licht UIT.")
+                    await self.hass.services.async_call("homeassistant", "turn_off", {"entity_id": motion_lights}, blocking=False)
+                    self._motion_timers[target_zone_id] = None
                     
+                from homeassistant.helpers.event import async_call_later
+                self._motion_timers[target_zone_id] = async_call_later(self.hass, delay_minutes * 60, _turn_off_lights_event)
+                            
         # 3. GEEN BEWEGING MEER (Start Uitschakel-Timer)
-        elif new_state.state == "off":
+        elif eff_state == "off":
             # Zeker weten dat ALLE sensoren in deze ruimte 'off' zijn
             if any(self._get_state(m_id) == "on" for m_id in zone_config.get("motion_sensors",[]) if m_id != entity_id): return
 
@@ -432,8 +460,17 @@ class AionLogicCoordinator:
         if early_bird_sensors:
             async def async_handle_early_bird(event):
                 new_state = event.data.get("new_state")
-                if new_state and new_state.state in ("on", "home", "true"):
-                    _LOGGER.info(f"🌅 Early Bird Sensor '{event.data.get('entity_id')}' geactiveerd. Cloud raadplegen...")
+                old_state = event.data.get("old_state")
+                entity_id = event.data.get("entity_id")
+                
+                is_valid = False
+                if new_state:
+                    if entity_id.startswith("event."):
+                        if old_state and new_state.state != old_state.state: is_valid = True
+                    elif new_state.state in ("on", "home", "true"): is_valid = True
+                        
+                if is_valid:
+                    _LOGGER.info(f"🌅 Early Bird Sensor '{entity_id}' geactiveerd. Cloud raadplegen...")
                     await self.async_trigger_main_logic(event)
 
             self._listeners.append(
