@@ -1,4 +1,4 @@
-"""Calendar platform for Aion Logic™ (Multi-Proxy Robust)."""
+"""Calendar platform for Aion Logic® (Multi-Proxy Robust)."""
 import logging
 from datetime import datetime, date
 
