@@ -1,4 +1,4 @@
-"""Switch platform voor Aion Logic™"""
+"""Switch platform voor Aion Logic®"""
 import logging
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.helpers.restore_state import RestoreEntity
