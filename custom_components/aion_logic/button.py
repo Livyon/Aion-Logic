@@ -1,4 +1,4 @@
-"""Button platform voor Aion Logic™."""
+"""Button platform voor Aion Logic®."""
 import logging
 import os
 import shutil
