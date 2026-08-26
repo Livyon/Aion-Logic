@@ -1,4 +1,4 @@
-"""Binaire sensoren voor Aion Logic™."""
+"""Binaire sensoren voor Aion Logic®."""
 import logging
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import HomeAssistant, callback
