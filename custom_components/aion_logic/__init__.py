@@ -1364,6 +1364,11 @@ class AionLogicCoordinator:
                                         
                                     if camera_entity:
                                         try:
+                                            try:
+                                                await self.hass.services.async_call("camera", "turn_on", {"entity_id": camera_entity}, blocking=False)
+                                                await asyncio.sleep(1.5)
+                                            except Exception: pass
+                                            
                                             filename = self.hass.config.path(f"aion_reflex_{camera_entity.split('.')[1]}.jpg")
                                             await asyncio.wait_for(
                                                 self.hass.services.async_call("camera", "snapshot", {"entity_id": camera_entity, "filename": filename}, blocking=True),
