@@ -1,4 +1,4 @@
-"""Sensor platform voor Aion Logic™"""
+"""Sensor platform voor Aion Logic®"""
 import logging
 from datetime import time
 import homeassistant.util.dt as dt_util
