@@ -1,4 +1,4 @@
-"""De Aion Logic™ Integratie"""
+"""De Aion Logic® Integratie"""
 import logging
 import asyncio
 import os
@@ -1305,10 +1305,24 @@ class AionLogicCoordinator:
             if dev_class == "vibration":
                 _LOGGER.debug(f"Trillingssensor '{trigger_entity_id}' gedetecteerd. Debounce overgeslagen.")
             else:
-                await asyncio.sleep(30)
+                await asyncio.sleep(45)
                 current_state = self._get_state(trigger_entity_id)
+                
+                is_armed = False
+                guard_mode = self.options.get(CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS)
+                if guard_mode == "manual" and self._get_internal_switch_state("guard_master") == "on":
+                    is_armed = True
+                elif guard_mode == "autonomous":
+                    persons_home = any(self._get_state(p) == "home" for p in self.options.get("person_entities", []))
+                    scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
+                    if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
+                        is_armed = True
+                
                 if (to_state == "on" and current_state == "off") or (to_state == "off" and current_state == "on"):
-                    return            
+                    if is_armed and to_state == "on":
+                        _LOGGER.debug(f"🚪 Deur '{trigger_entity_id}' weer dicht, maar systeem is Armed. Negeer sluiting, inloopvertraging gepasseerd.")
+                    else:
+                        return         
 
         if self._is_running: return
         self._is_running = True
