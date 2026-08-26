@@ -1,4 +1,4 @@
-"""API Client voor de Aion Logic™ Gateway (Async Version)."""
+"""API Client voor de Aion Logic® Gateway (Async Version)."""
 import aiohttp
 import asyncio
 import logging
