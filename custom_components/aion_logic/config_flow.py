@@ -1,4 +1,4 @@
-"""Config flow voor Aion Logic™."""
+"""Config flow voor Aion Logic®."""
 import voluptuous as vol
 import logging
 from typing import Any, Dict
