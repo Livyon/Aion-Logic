@@ -1,4 +1,4 @@
-"""Constanten voor de Aion Logic™ integratie."""
+"""Constanten voor de Aion Logic® integratie."""
 
 DOMAIN = "aion_logic"
 
