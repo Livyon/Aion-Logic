@@ -1318,7 +1318,7 @@ class AionLogicCoordinator:
                     if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
                         is_armed = True
                 
-                if (to_state == "on" and current_state == "off") or (to_state == "off" and current_state == "on"):
+                if current_state != to_state:
                     if is_armed and to_state == "on":
                         _LOGGER.debug(f"🚪 Deur '{trigger_entity_id}' weer dicht, maar systeem is Armed. Negeer sluiting, inloopvertraging gepasseerd.")
                     else:
