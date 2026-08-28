@@ -407,6 +407,13 @@ class AionLogicCoordinator:
             entity_reg = async_get_entity_registry(self.hass)
             if entity_id := entity_reg.async_get_entity_id("switch", DOMAIN, f"{self.entry.entry_id}_coming_home"):
                 await self.hass.services.async_call("switch", "turn_on", {"entity_id": entity_id})
+
+        elif action == "AION_ARM_SYSTEM":
+            _LOGGER.info("🛡️ Gebruiker schakelt alarm in via vertrek-notificatie.")
+            entity_reg = async_get_entity_registry(self.hass)
+            if entity_id := entity_reg.async_get_entity_id("switch", DOMAIN, f"{self.entry.entry_id}_guard_master"):
+                await self.hass.services.async_call("switch", "turn_on", {"entity_id": entity_id})
+        
         elif action == "AION_ALARM_DISMISS":
             _LOGGER.info("🔕 ALARM: Gebruiker zet alarm uit via notificatie.")
 
