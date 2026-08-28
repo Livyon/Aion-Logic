@@ -440,6 +440,26 @@ class AionLogicCoordinator:
             entity_reg = async_get_entity_registry(self.hass)
             if entity_id := entity_reg.async_get_entity_id("switch", DOMAIN, f"{self.entry.entry_id}_guard_pause"):
                 await self.hass.services.async_call("switch", "turn_on", {"entity_id": entity_id})
+              
+                services = []
+                if sec_notify := self.options.get("security_notify_service"):
+                    services.extend([s.strip() for s in sec_notify.split(',') if s.strip()])
+                
+                for svc in set(services):
+                    if not svc: continue
+                    svc_name = svc if svc.startswith("notify.") else f"notify.{svc}"
+                    n_domain, n_service = svc_name.split(".", 1)
+                    try:
+                        await self.hass.services.async_call(
+                            n_domain, n_service, 
+                            {
+                                "title": "🛡️ Beveiliging Actief",
+                                "message": "Aion Guardian is succesvol ingeschakeld en waakt over uw woning.",
+                                "data": {"tag": "aion_security_alert"}
+                            }, 
+                            blocking=False
+                        )
+                    except Exception: pass        
 
         elif action == "AION_EARLY_BIRD_CANCEL":
             _LOGGER.info("😴 Gebruiker slaapt verder. Early Bird wordt geannuleerd.")
