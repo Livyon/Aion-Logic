@@ -407,12 +407,6 @@ class AionLogicCoordinator:
             entity_reg = async_get_entity_registry(self.hass)
             if entity_id := entity_reg.async_get_entity_id("switch", DOMAIN, f"{self.entry.entry_id}_coming_home"):
                 await self.hass.services.async_call("switch", "turn_on", {"entity_id": entity_id})
-
-        elif action == "AION_ARM_SYSTEM":
-            _LOGGER.info("🛡️ Gebruiker schakelt alarm in via vertrek-notificatie.")
-            entity_reg = async_get_entity_registry(self.hass)
-            if entity_id := entity_reg.async_get_entity_id("switch", DOMAIN, f"{self.entry.entry_id}_guard_master"):
-                await self.hass.services.async_call("switch", "turn_on", {"entity_id": entity_id})
         
         elif action == "AION_ALARM_DISMISS":
             _LOGGER.info("🔕 ALARM: Gebruiker zet alarm uit via notificatie.")
@@ -441,9 +435,19 @@ class AionLogicCoordinator:
             if entity_id := entity_reg.async_get_entity_id("switch", DOMAIN, f"{self.entry.entry_id}_guard_pause"):
                 await self.hass.services.async_call("switch", "turn_on", {"entity_id": entity_id})
               
+        elif action == "AION_ARM_SYSTEM":
+            _LOGGER.info("🛡️ Gebruiker schakelt alarm in via vertrek-notificatie.")
+            entity_reg = async_get_entity_registry(self.hass)
+            if entity_id := entity_reg.async_get_entity_id("switch", DOMAIN, f"{self.entry.entry_id}_guard_master"):
+                await self.hass.services.async_call("switch", "turn_on", {"entity_id": entity_id})
+
+                # UX FIX: Bevestiging sturen en de oude waarschuwing netjes overschrijven
                 services = []
-                if sec_notify := self.options.get("security_notify_service"):
+                sec_notify = self.options.get("security_notify_service")
+                if isinstance(sec_notify, str):
                     services.extend([s.strip() for s in sec_notify.split(',') if s.strip()])
+                elif isinstance(sec_notify, list):
+                    services.extend(sec_notify)
                 
                 for svc in set(services):
                     if not svc: continue
@@ -455,7 +459,7 @@ class AionLogicCoordinator:
                             {
                                 "title": "🛡️ Beveiliging Actief",
                                 "message": "Aion Guardian is succesvol ingeschakeld en waakt over uw woning.",
-                                "data": {"tag": "aion_security_alert"}
+                                "data": {"tag": "aion_alarm_reminder"} # <--- Gebruik exact dezelfde tag!
                             }, 
                             blocking=False
                         )
@@ -1351,7 +1355,15 @@ class AionLogicCoordinator:
                     else:
                         return         
 
-        if self._is_running: return
+        wait_cycles = 0
+        while self._is_running and wait_cycles < 20: # Maximaal 10 seconden in de wachtrij
+            await asyncio.sleep(0.5)
+            wait_cycles += 1
+            
+        if self._is_running: 
+            _LOGGER.warning("Aion Logic Cloud is te druk. Event overgeslagen om filevorming te voorkomen.")
+            return
+
         self._is_running = True
         
         try:
