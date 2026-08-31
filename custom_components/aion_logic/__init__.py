@@ -474,6 +474,21 @@ class AionLogicCoordinator:
             _LOGGER.info("🏖️ Gebruiker bevestigt Vakantiemodus via notificatie.")
             self._vacation_override = True
             await self.async_trigger_main_logic(event)
+            
+        elif action == "AION_DISARM_SYSTEM":
+            _LOGGER.info("🔓 Gebruiker schakelt alarm uit via ontwaak-notificatie.")
+            entity_reg = async_get_entity_registry(self.hass)
+            if entity_id := entity_reg.async_get_entity_id("switch", DOMAIN, f"{self.entry.entry_id}_guard_master"):
+                await self.hass.services.async_call("switch", "turn_off", {"entity_id": entity_id})
+
+        elif action == "AION_REMINDER_SNOOZE":
+            _LOGGER.info("⏳ Gebruiker stelt alarm-actie 30 minuten uit.")
+            async def _send_snoozed_reminder(_):
+                _LOGGER.info("⏳ Snooze timer verlopen. Trigger Hoofdlogica voor reminder.")
+                self._snooze_reminder_flag = True
+                await self.async_trigger_main_logic()
+            from homeassistant.helpers.event import async_call_later
+            async_call_later(self.hass, 1800, _send_snoozed_reminder)
 
     async def setup_listeners(self) -> None:
         _LOGGER.debug("Registreren van Aion Logic triggers...")
@@ -602,6 +617,21 @@ class AionLogicCoordinator:
 
         self._listeners.append(async_track_time_change(self.hass, self.async_trigger_main_logic, hour=23, minute=0, second=0))
         self._listeners.append(async_track_time_change(self.hass, self.async_trigger_main_logic, hour=4, minute=59, second=59))
+        
+        # --- Reminder Triggers (T-5 min) ---
+        try:
+            night_str = self.options.get("night_start_time", "23:00:00")
+            night_time = dt_util.dt.time.fromisoformat(night_str)
+            n_dt = dt_util.now().replace(hour=night_time.hour, minute=night_time.minute, second=0) - timedelta(minutes=5)
+            self._listeners.append(async_track_time_change(self.hass, self.async_trigger_main_logic, hour=n_dt.hour, minute=n_dt.minute, second=0))
+        except Exception: pass
+
+        try:
+            target_str = self.options.get("proactive_target_time", "06:00:00")
+            morn_t = dt_util.dt.time.fromisoformat(target_str)
+            m_dt = dt_util.now().replace(hour=morn_t.hour, minute=morn_t.minute, second=0) - timedelta(minutes=5)
+            self._listeners.append(async_track_time_change(self.hass, self.async_trigger_main_logic, hour=m_dt.hour, minute=m_dt.minute, second=0))
+        except Exception: pass
 
         target_str = self.options.get("proactive_target_time", "06:00:00")
         try: 
@@ -875,7 +905,11 @@ class AionLogicCoordinator:
 
         if getattr(self, "_vacation_override", False):
             context_data["vacation_confirmed"] = True
-            self._vacation_override = False        
+            self._vacation_override = False
+            
+        if getattr(self, "_snooze_reminder_flag", False):
+            context_data["snooze_reminder"] = True
+            self._snooze_reminder_flag = False            
 
         weather_entity = self.options.get("weather_entity")
         outdoor_temp = float(self._get_state_attr(self.options.get("weather_entity"), "temperature", 15.0) or 15.0)
