@@ -459,7 +459,7 @@ class AionLogicCoordinator:
                             {
                                 "title": "🛡️ Beveiliging Actief",
                                 "message": "Aion Guardian is succesvol ingeschakeld en waakt over uw woning.",
-                                "data": {"tag": "aion_alarm_reminder"} # <--- Gebruik exact dezelfde tag!
+                                "data": {"tag": "aion_night_reminder"} # Overschrijf specifiek de nacht-reminder op andere telefoons
                             }, 
                             blocking=False
                         )
@@ -480,9 +480,36 @@ class AionLogicCoordinator:
             entity_reg = async_get_entity_registry(self.hass)
             if entity_id := entity_reg.async_get_entity_id("switch", DOMAIN, f"{self.entry.entry_id}_guard_master"):
                 await self.hass.services.async_call("switch", "turn_off", {"entity_id": entity_id})
+                
+            services = []
+            sec_notify = self.options.get("security_notify_service")
+            if isinstance(sec_notify, str): services.extend([s.strip() for s in sec_notify.split(',') if s.strip()])
+            elif isinstance(sec_notify, list): services.extend(sec_notify)
+            for svc in set(services):
+                if not svc: continue
+                svc_name = svc if svc.startswith("notify.") else f"notify.{svc}"
+                n_domain, n_service = svc_name.split(".", 1)
+                try:
+                    await self.hass.services.async_call(n_domain, n_service, {"message": "clear_notification", "data": {"tag": "aion_morning_reminder"}}, blocking=False)
+                except: pass        
 
         elif action == "AION_REMINDER_SNOOZE":
             _LOGGER.info("⏳ Gebruiker stelt alarm-actie 30 minuten uit.")
+            
+            # Wis de melding direct op ALLE andere telefoons om dubbele acties te voorkomen
+            services = []
+            sec_notify = self.options.get("security_notify_service")
+            if isinstance(sec_notify, str): services.extend([s.strip() for s in sec_notify.split(',') if s.strip()])
+            elif isinstance(sec_notify, list): services.extend(sec_notify)
+            for svc in set(services):
+                if not svc: continue
+                svc_name = svc if svc.startswith("notify.") else f"notify.{svc}"
+                n_domain, n_service = svc_name.split(".", 1)
+                for tag_to_clear in ["aion_night_reminder", "aion_morning_reminder"]:
+                    try:
+                        await self.hass.services.async_call(n_domain, n_service, {"message": "clear_notification", "data": {"tag": tag_to_clear}}, blocking=False)
+                    except: pass
+            
             async def _send_snoozed_reminder(_):
                 _LOGGER.info("⏳ Snooze timer verlopen. Trigger Hoofdlogica voor reminder.")
                 self._snooze_reminder_flag = True
