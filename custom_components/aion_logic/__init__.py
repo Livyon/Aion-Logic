@@ -1388,27 +1388,30 @@ class AionLogicCoordinator:
             
             if trigger_entity_id in all_window_sensors:
                 is_window_trigger = True
-        
+
+        trigger_memory_state = new_state_obj.state if new_state_obj else "unknown"
+        is_armed = False
+
         if is_window_trigger:
-            to_state = new_state_obj.state if new_state_obj else "unknown"
+            to_state = trigger_memory_state
             if to_state in [STATE_UNAVAILABLE, STATE_UNKNOWN]: return
             
             dev_class = self._get_state_attr(trigger_entity_id, "device_class")
+            
+            guard_mode = self.options.get(CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS)
+            if guard_mode == "manual" and self._get_internal_switch_state("guard_master") == "on":
+                is_armed = True
+            elif guard_mode == "autonomous":
+                persons_home = any(self._get_state(p) == "home" for p in self.options.get("person_entities", []))
+                scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
+                if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
+                    is_armed = True
+            
             if dev_class == "vibration":
                 _LOGGER.debug(f"Trillingssensor '{trigger_entity_id}' gedetecteerd. Debounce overgeslagen.")
             else:
                 await asyncio.sleep(45)
                 current_state = self._get_state(trigger_entity_id)
-                
-                is_armed = False
-                guard_mode = self.options.get(CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS)
-                if guard_mode == "manual" and self._get_internal_switch_state("guard_master") == "on":
-                    is_armed = True
-                elif guard_mode == "autonomous":
-                    persons_home = any(self._get_state(p) == "home" for p in self.options.get("person_entities", []))
-                    scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
-                    if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
-                        is_armed = True
                 
                 if current_state != to_state:
                     if is_armed and to_state == "on":
@@ -1456,6 +1459,10 @@ class AionLogicCoordinator:
                             if trigger_entity_id in windows or trigger_entity_id in motions:
                                 # Kruisdetectie: Minimaal 1 raam open én minimaal 1 bewegingssensor actief
                                 any_window_open = any(self._get_state(w) == "on" for w in windows)
+                                
+                                # STATE MEMORY: Als de deur intussen dicht is, maar wel de trigger was
+                                if is_armed and is_window_trigger and trigger_memory_state in ["on", "open"] and trigger_entity_id in windows:
+                                    any_window_open = True                                
                                 any_motion_active = any(self._get_state(m) == "on" for m in motions)
                                 
                                 if any_window_open and any_motion_active:
@@ -1492,6 +1499,11 @@ class AionLogicCoordinator:
             # --- EINDE FASE A & B ---
             
             payload = self._build_main_logic_payload(trigger_entity_id=trigger_entity_id)
+            
+            # STATE MEMORY INJECTIE VOOR CLOUD
+            if is_armed and is_window_trigger and trigger_memory_state in ["on", "open"]:
+                payload["sensors"][trigger_entity_id] = trigger_memory_state
+                _LOGGER.debug(f"State Memory: {trigger_entity_id} geforceerd naar '{trigger_memory_state}' voor de Cloud payload.")
             
             # Injecteer Level 2 & Camera info
             payload["sensors"]["level_2_intrusion"] = level_2_intrusion
