@@ -160,9 +160,9 @@ class AionLogicCoordinator:
 
         if not new_state or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN): return
 
-        # Bepaal dynamische Ghost Window (15 min nachts, anders standaard)
+        # Bepaal dynamische Ghost Window (15 min nachts, minimaal 5 min overdag tegen Deep Sleep)
         scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
-        eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else GHOST_WINDOW_SECONDS
+        eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else max(300, GHOST_WINDOW_SECONDS)
 
         
         if old_state and old_state.state != new_state.state:
@@ -207,8 +207,12 @@ class AionLogicCoordinator:
                 if departed_at:
                     absence_duration = (dt_util.utcnow() - departed_at).total_seconds()
                     if absence_duration <= eff_ghost_window:
-                        _LOGGER.warning(f"🛡️ Ghost Bounce Guard: '{entity_id}' was slechts {int(absence_duration)}s weg. Cloud trigger geannuleerd (ghost-bounce).")
-                        return
+                        current_scenario = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
+                        if "afwezig" in current_scenario or "alarm" in current_scenario:
+                            _LOGGER.info(f"🔓 Ghost Bounce overschreven: Systeem stond op Afwezig/Alarm, snelle thuiskomst toegestaan voor '{entity_id}'.")
+                        else:
+                            _LOGGER.warning(f"🛡️ Ghost Bounce Guard: '{entity_id}' was slechts {int(absence_duration)}s weg. Cloud trigger geannuleerd (ghost-bounce).")
+                            return
                 
                 reg = self._entity_registry or async_get_entity_registry(self.hass)
                 guest_switch_id = reg.async_get_entity_id('switch', DOMAIN, f'{self.entry.entry_id}_guest_mode')
@@ -858,7 +862,9 @@ class AionLogicCoordinator:
                     # Dynamische bounce-limiet: 30 minuten bij slechte GPS, 5 minuten bij goede GPS
                     bounce_limit = 1800 if is_fuzzy_dep else 300
                     if (dt_util.utcnow() - departed_at).total_seconds() < bounce_limit:
-                        is_bounce = True
+                        scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
+                        if "afwezig" not in scenario_state and "alarm" not in scenario_state:
+                            is_bounce = True
                         
                 if is_recent_restart or is_bounce or is_ghost_masked:
                     # Maskeer de aankomsttijd naar het verleden (10 min geleden)
