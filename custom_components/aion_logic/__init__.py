@@ -867,8 +867,6 @@ class AionLogicCoordinator:
                             is_bounce = True
                         
                 if is_recent_restart or is_bounce or is_ghost_masked:
-                    # Maskeer de aankomsttijd naar het verleden (10 min geleden)
-                    eff_last_changed = dt_util.utcnow() - timedelta(minutes=10)
                     if is_bounce: _LOGGER.debug(f"👻 Ghost Bounce genegeerd voor {entity_id}")
                     if is_recent_restart: _LOGGER.debug(f"🔄 Restart False-Positive genegeerd voor {entity_id}")
                 # ---------------------------------------------------------
@@ -876,7 +874,10 @@ class AionLogicCoordinator:
                 persons_data[entity_id] = {
                     "state": eff_state,
                     "last_changed": eff_last_changed.isoformat() if eff_last_changed else None,
-                    "gps_accuracy": gps_acc
+                    "gps_accuracy": gps_acc,
+                    "is_bounce": is_bounce,
+                    "is_restart": is_recent_restart,
+                    "is_ghost_masked": is_ghost_masked
                 }
         
         persons_home = any(p.get("state") == "home" for p in persons_data.values())
