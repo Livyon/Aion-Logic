@@ -94,6 +94,7 @@
                     "window_sensors": "Raam/Deur & Trilling Sensoren",
                     "enable_boost": "Sta Boost toe in deze kamer?",
                     "is_reference": "Referentiekamer (primaire kamer begin/einde proactive start)",
+                    "is_entry_zone": "Inloopzone (Entry/Exit) voor alarm",
                     "day_start": "Dag begint om",
                     "night_start": "Nacht begint om",
                     "lookup_prefix": "Koppel aan Profiel (bv. Woonkamer/Kantoor)"
