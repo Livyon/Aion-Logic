@@ -215,6 +215,7 @@ def _get_zone_schema_generic(zone_data: dict, zone_slot_key: str = None) -> vol.
         vol.Optional("window_sensors", default=zone_data.get("window_sensors", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)),
         vol.Optional("enable_boost", default=zone_data.get("enable_boost", True)): selector.BooleanSelector(),
         vol.Optional("is_reference", default=zone_data.get("is_reference", False)): selector.BooleanSelector(),
+        vol.Optional("is_entry_zone", description="Inloopzone (Entry/Exit) voor alarm", default=zone_data.get("is_entry_zone", False)): selector.BooleanSelector(),
         vol.Required("lookup_prefix", default=zone_data.get("lookup_prefix", "woonkamer")): selector.SelectSelector(selector.SelectSelectorConfig(options=SETPOINT_GROUPS, mode=selector.SelectSelectorMode.DROPDOWN)),
         vol.Optional("zone_ventilation", default=_safe_default("zone_ventilation")): selector.EntitySelector({"domain": ["fan", "switch", "select"]}),
         vol.Optional("camera_entity", description="Zone Camera (Beeldverificatie Inbraak)", default=_safe_default("camera_entity")): selector.EntitySelector({"domain": "camera"}),
@@ -563,6 +564,7 @@ class AionLogicOptionsFlow(OptionsFlow):
                 "lighting_entities": found_lights,
                 "enable_boost": True,
                 "is_reference": False,
+                "is_entry_zone": False,
                 "day_start": "06:00:00",
                 "night_start": "22:00:00",
                 "lookup_prefix": "woonkamer"
