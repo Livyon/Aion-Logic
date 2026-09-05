@@ -846,7 +846,7 @@ class AionLogicCoordinator:
                 eff_state = state_obj.state
                 is_ghost_masked = False
                 scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
-                eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else GHOST_WINDOW_SECONDS
+                eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else max(300, GHOST_WINDOW_SECONDS)
                  
                 # Haal rauwe GPS nauwkeurigheid op voor de Cloud
                 try: gps_acc = float(state_obj.attributes.get("gps_accuracy", 0))
