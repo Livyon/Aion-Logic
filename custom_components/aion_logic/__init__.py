@@ -1383,21 +1383,40 @@ class AionLogicCoordinator:
             event = args[0]
             trigger_entity_id = event.data.get("entity_id")
             new_state_obj = event.data.get("new_state")
-        
-        is_window_trigger = False
-        if trigger_entity_id:
-            # Check zowel oude zones als nieuwe areas
-            all_window_sensors = []
-            for key, zone_cfg in self.options.items():
-                if (key.startswith("area_") or key.startswith("zone_")) and isinstance(zone_cfg, dict):
-                    if s := zone_cfg.get("window_sensors"):
-                         all_window_sensors.extend(s)
-            
-            if trigger_entity_id in all_window_sensors:
-                is_window_trigger = True
 
         trigger_memory_state = new_state_obj.state if new_state_obj else "unknown"
+        
+        # 1. Bepaal Armed Status globaal (omhoog gehaald)
         is_armed = False
+        guard_mode = self.options.get(CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS)
+        if guard_mode == "manual" and self._get_internal_switch_state("guard_master") == "on":
+            is_armed = True
+        elif guard_mode == "autonomous":
+            persons_home = any(self._get_state(p) == "home" for p in self.options.get("person_entities", []))
+            scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
+            if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
+                is_armed = True
+        
+        # 2. Bepaal sensor type
+        is_window_trigger = False
+        is_motion_trigger = False
+        is_entry_zone_trigger = False
+        if trigger_entity_id:
+            # Check zowel oude zones als nieuwe areas
+            for key, zone_cfg in self.options.items():
+                if (key.startswith("area_") or key.startswith("zone_")) and isinstance(zone_cfg, dict):
+                    if trigger_entity_id in zone_cfg.get("window_sensors", []):
+                        is_window_trigger = True
+                        if zone_cfg.get("is_entry_zone", False):
+                            is_entry_zone_trigger = True                        
+                    if trigger_entity_id in zone_cfg.get("motion_sensors", []):
+                        is_motion_trigger = True
+
+        # 3. Inloopvertraging (Entry Delay) Shield
+        if getattr(self, "_entry_delay_expires", None) and dt_util.utcnow() < self._entry_delay_expires:
+            if is_armed and is_motion_trigger:
+                _LOGGER.debug(f"⏳ Inloopvertraging actief. Beweging '{trigger_entity_id}' tijdelijk genegeerd als Cloud-trigger.")
+                return
 
         if is_window_trigger:
             to_state = trigger_memory_state
@@ -1405,24 +1424,23 @@ class AionLogicCoordinator:
             
             dev_class = self._get_state_attr(trigger_entity_id, "device_class")
             
-            guard_mode = self.options.get(CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS)
-            if guard_mode == "manual" and self._get_internal_switch_state("guard_master") == "on":
-                is_armed = True
-            elif guard_mode == "autonomous":
-                persons_home = any(self._get_state(p) == "home" for p in self.options.get("person_entities", []))
-                scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
-                if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
-                    is_armed = True
-            
             if dev_class == "vibration":
                 _LOGGER.debug(f"Trillingssensor '{trigger_entity_id}' gedetecteerd. Debounce overgeslagen.")
             else:
-                await asyncio.sleep(45)
+                if is_armed and to_state in ["on", "open"]:
+                    if is_entry_zone_trigger:
+                        self._entry_delay_expires = dt_util.utcnow() + timedelta(seconds=45)
+                        await asyncio.sleep(45)
+                    else:
+                        _LOGGER.warning(f"🚨 Onmiddellijk alarm: Deur/raam '{trigger_entity_id}' geopend buiten Inloopzone!")
+                else:
+                    await asyncio.sleep(45)
+
                 current_state = self._get_state(trigger_entity_id)
                 
                 if current_state != to_state:
-                    if is_armed and to_state == "on":
-                        _LOGGER.debug(f"🚪 Deur '{trigger_entity_id}' weer dicht, maar systeem is Armed. Negeer sluiting, inloopvertraging gepasseerd.")
+                    if is_armed and to_state in ["on", "open"]:
+                        _LOGGER.debug(f"🚪 Deur '{trigger_entity_id}' weer dicht, maar systeem is Armed. Negeer sluiting, actie gepasseerd.")
                     else:
                         return         
 
