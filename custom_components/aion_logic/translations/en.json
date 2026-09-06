@@ -96,7 +96,10 @@
                     "is_entry_zone": "Entry zone (Entry/Exit) for alarm",
                     "day_start": "Day starts at",
                     "night_start": "Night starts at",
-                    "lookup_prefix": "Link to Profile (e.g., Living Room/Office)"
+                    "lookup_prefix": "Link to Profile (e.g. Living room/Office)",
+                    "zone_ventilation": "Local Ventilation or Smart Air Damper",
+                    "camera_entity": "Zone Camera (Intrusion Image Verification)",
+                    "humidity_sensor": "Humidity Sensor (For local ventilation boost)"
                 }
             },
             "setpoints": {
