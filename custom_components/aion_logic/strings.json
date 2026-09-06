@@ -97,7 +97,10 @@
                     "is_entry_zone": "Inloopzone (Entry/Exit) voor alarm",
                     "day_start": "Dag begint om",
                     "night_start": "Nacht begint om",
-                    "lookup_prefix": "Koppel aan Profiel (bv. Woonkamer/Kantoor)"
+                    "lookup_prefix": "Koppel aan Profiel (bv. Woonkamer/Kantoor)",
+                    "zone_ventilation": "Lokale Ventilatie of Slimme Luchtklep",
+                    "camera_entity": "Zone Camera (Beeldverificatie Inbraak)",
+                    "humidity_sensor": "Luchtvochtigheidssensor (Voor lokale ventilatie-boost)"
                 }
             },
             "setpoints": {
