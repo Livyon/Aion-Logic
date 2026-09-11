@@ -1496,26 +1496,75 @@ class AionLogicCoordinator:
                                         
                                     if camera_entity:
                                         try:
-                                            try:
-                                                await self.hass.services.async_call("camera", "turn_on", {"entity_id": camera_entity}, blocking=False)
-                                                await asyncio.sleep(1.5)
-                                            except Exception: pass
-                                            
+                                            # 1. Probeer altijd EERST de RTSP/ONVIF live snapshot methode
                                             filename = self.hass.config.path(f"aion_reflex_{camera_entity.split('.')[1]}.jpg")
-                                            await asyncio.wait_for(
-                                                self.hass.services.async_call("camera", "snapshot", {"entity_id": camera_entity, "filename": filename}, blocking=True),
-                                                timeout=4.0
-                                            )
-                                            await asyncio.sleep(0.3) # Korte I/O buffer voor bestandsysteem
+                                            snapshot_success = False
                                             
-                                            if os.path.exists(filename):
-                                                with open(filename, "rb") as f:
-                                                    snapshot_b64 = base64.b64encode(f.read()).decode('utf-8')
-                                                os.remove(filename) # Veilig opruimen
+                                            try:
+                                                try:
+                                                    await self.hass.services.async_call("camera", "turn_on", {"entity_id": camera_entity}, blocking=False)
+                                                    await asyncio.sleep(1.5)
+                                                except Exception: pass
+                                                
+                                                await asyncio.wait_for(
+                                                    self.hass.services.async_call("camera", "snapshot", {"entity_id": camera_entity, "filename": filename}, blocking=True),
+                                                    timeout=4.0
+                                                )
+                                                await asyncio.sleep(0.3) # Korte I/O buffer
+                                                if os.path.exists(filename):
+                                                    snapshot_success = True
+                                            except asyncio.TimeoutError:
+                                                _LOGGER.warning(f"⏳ Camera Reflex Timeout (RTSP) voor {camera_entity}. Overschakelen op Hybrid Nest mode...")
+                                            except Exception as e:
+                                                _LOGGER.warning(f"⚠️ Camera Reflex RTSP faalde voor {camera_entity}: {e}. Overschakelen op Hybrid Nest mode...")
+
+                                            # 2. Verwerk de Live Snapshot
+                                            if snapshot_success:
+                                                def _read_live():
+                                                    with open(filename, "rb") as f:
+                                                        b64 = base64.b64encode(f.read()).decode('utf-8')
+                                                    os.remove(filename)
+                                                    return b64
+                                                snapshot_b64 = await self.hass.async_add_executor_job(_read_live)
                                                 snapshot_camera = camera_entity
-                                                _LOGGER.info("📸 Camera Reflex succesvol: Base64 gegenereerd.")
-                                        except asyncio.TimeoutError:
-                                            _LOGGER.error("⏳ Camera Reflex Timeout! Snapshot duurde te lang, alarm wordt direct doorgezet.")
+                                                _LOGGER.info("📸 Camera Reflex (Live RTSP): Base64 gegenereerd.")
+                                                
+                                            # 3. HYBRID NEST FALLBACK: Zoek het meest recente snapshot in de mediabank
+                                            else:
+                                                def _find_and_read_nest_media():
+                                                    import os
+                                                    import time
+                                                    latest_f = None
+                                                    latest_t = 0
+                                                    
+                                                    search_dirs = ["/media/nest", self.hass.config.path("media", "nest")]
+                                                    
+                                                    for base_dir in search_dirs:
+                                                        if not os.path.exists(base_dir): continue
+                                                        for root, _, files in os.walk(base_dir):
+                                                            for file in files:
+                                                                if file.lower().endswith(('.jpg', '.jpeg', '.png')):
+                                                                    fp = os.path.join(root, file)
+                                                                    try:
+                                                                        mtime = os.path.getmtime(fp)
+                                                                        if mtime > latest_t:
+                                                                            latest_t = mtime
+                                                                            latest_f = fp
+                                                                    except: pass
+                                                    
+                                                    # Maximaal 10 minuten oud (voorkomt versturen van oude valse alarmbeelden)
+                                                    if latest_f and (time.time() - latest_t) < 600: 
+                                                        with open(latest_f, "rb") as f:
+                                                            return base64.b64encode(f.read()).decode('utf-8'), latest_f
+                                                    return None, None
+                                                    
+                                                nest_b64, found_file = await self.hass.async_add_executor_job(_find_and_read_nest_media)
+                                                if nest_b64:
+                                                    snapshot_b64 = nest_b64
+                                                    snapshot_camera = camera_entity
+                                                    _LOGGER.info(f"📸 Camera Reflex (Hybrid Nest): Lokaal media bestand succesvol verwerkt ({found_file}).")
+                                                else:
+                                                    _LOGGER.error("📸 Camera Reflex faalde volledig: Geen live beeld én geen recente lokale Nest media gevonden.")
                                         except Exception as e:
                                             _LOGGER.error(f"Fout bij Camera Reflex: {e}")
                                     else:
