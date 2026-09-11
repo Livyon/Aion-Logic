@@ -1534,6 +1534,7 @@ class AionLogicCoordinator:
                                                 def _find_and_read_nest_media():
                                                     import os
                                                     import time
+                                                    import subprocess
                                                     latest_f = None
                                                     latest_t = 0
                                                     
@@ -1543,7 +1544,7 @@ class AionLogicCoordinator:
                                                         if not os.path.exists(base_dir): continue
                                                         for root, _, files in os.walk(base_dir):
                                                             for file in files:
-                                                                if file.lower().endswith(('.jpg', '.jpeg', '.png')):
+                                                                if file.lower().endswith(('.jpg', '.jpeg', '.png', '.mp4')):
                                                                     fp = os.path.join(root, file)
                                                                     try:
                                                                         mtime = os.path.getmtime(fp)
@@ -1553,9 +1554,20 @@ class AionLogicCoordinator:
                                                                     except: pass
                                                     
                                                     # Maximaal 10 minuten oud (voorkomt versturen van oude valse alarmbeelden)
-                                                    if latest_f and (time.time() - latest_t) < 600: 
-                                                        with open(latest_f, "rb") as f:
-                                                            return base64.b64encode(f.read()).decode('utf-8'), latest_f
+                                                    if latest_f and (time.time() - latest_t) < 600:
+                                                        if latest_f.lower().endswith('.mp4'):
+                                                            try:
+                                                                # Extract 1e frame via ingebouwde FFmpeg naar memory (pipe)
+                                                                cmd = ['ffmpeg', '-y', '-i', latest_f, '-vframes', '1', '-q:v', '2', '-c:v', 'mjpeg', '-f', 'image2', 'pipe:1']
+                                                                result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
+                                                                if result.returncode == 0 and result.stdout:
+                                                                    return base64.b64encode(result.stdout).decode('utf-8'), f"{latest_f} (FFmpeg Extractie)"
+                                                            except Exception as ex:
+                                                                _LOGGER.warning(f"⚠️ FFmpeg extractie faalde voor {latest_f}: {ex}")
+                                                                return None, None
+                                                        else:
+                                                            with open(latest_f, "rb") as f:
+                                                                return base64.b64encode(f.read()).decode('utf-8'), latest_f
                                                     return None, None
                                                     
                                                 nest_b64, found_file = await self.hass.async_add_executor_job(_find_and_read_nest_media)
