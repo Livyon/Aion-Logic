@@ -1594,7 +1594,7 @@ class AionLogicCoordinator:
             # Injecteer Level 2 & Camera info
             payload["sensors"]["level_2_intrusion"] = level_2_intrusion
             if snapshot_b64:
-                payload["camera_reflex"] = {
+                payload["sensors"]["camera_reflex"] = {
                     "entity_id": snapshot_camera,
                     "base64_image": snapshot_b64
                 }
