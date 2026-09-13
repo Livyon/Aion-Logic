@@ -198,11 +198,15 @@ class AionLogicCoordinator:
 
         # 3. HYBRID FALLBACK: Media Source (Voor Cloud & Lokale proxy media)
         try:
+            _LOGGER.debug("Start Media Source Fallback (Stap 3)...")
             media_root = await media_source.async_browse_media(self.hass, None)
             target_item = None
             if media_root and media_root.children:
+                _LOGGER.debug(f"Media root gevonden met {len(media_root.children)} hoofdmappen.")
                 for child in media_root.children:
+                    _LOGGER.debug(f"Gevonden integratie-map: {child.media_content_id}")
                     if "nest" in child.media_content_id.lower() or "ezviz" in child.media_content_id.lower() or "ring" in child.media_content_id.lower():
+                        _LOGGER.debug(f"✅ Cloud map match gevonden: {child.media_content_id}")
                         camera_folder = await media_source.async_browse_media(self.hass, child.media_content_id)
                         if camera_folder and camera_folder.children:
                             first_child = camera_folder.children[0]
@@ -211,17 +215,25 @@ class AionLogicCoordinator:
                                 event_folder = await media_source.async_browse_media(self.hass, first_child.media_content_id)
                                 if event_folder and event_folder.children:
                                     target_item = sorted(event_folder.children, key=lambda x: getattr(x, 'title', ''), reverse=True)[0]
+                                    _LOGGER.debug(f"Meest recente event video gevonden (uit submap): {target_item.title}")
                                     break
                             else:
                                 target_item = sorted(camera_folder.children, key=lambda x: getattr(x, 'title', ''), reverse=True)[0]
+                                _LOGGER.debug(f"Meest recente event video gevonden: {target_item.title}")
                                 break
+                        else:
+                            _LOGGER.debug(f"De map {child.media_content_id} bevatte geen media.")
+            else:
+                _LOGGER.debug("Geen media root mappen gevonden in HA.")                                
             
             if target_item:
                 resolved = await media_source.async_resolve_media(self.hass, target_item.media_content_id, None)
                 file_url = resolved.url
+                _LOGGER.debug(f"Media Source URL resolved: {file_url}")
                 
                 # Optie A: Cloud Integratie Proxy URL (e.g. /api/nest/...)
                 if file_url.startswith("/api/"):
+                    _LOGGER.debug("Start Optie A: Download via interne HA API")
                     users = await self.hass.auth.async_get_users()
                     user = next((u for u in users if u.is_admin and u.is_active), None)
                     if user and user.refresh_tokens:
@@ -234,10 +246,13 @@ class AionLogicCoordinator:
                         protocol = "https" if is_ssl else "http"
                         port = self.hass.config.api.port if getattr(self.hass.config, "api", None) else 8123
                         url = f"{protocol}://127.0.0.1:{port}{file_url}"
+                        _LOGGER.debug(f"Video ophalen van: {url}")
                         
                         async with session.get(url, headers={"Authorization": f"Bearer {token}"}, ssl=False) as resp:
+                            _LOGGER.debug(f"Media fetch HTTP status: {resp.status}")
                             if resp.status == 200:
                                 media_data = await resp.read()
+                                _LOGGER.debug(f"Video gedownload: {len(media_data)} bytes")
                                 
                                 if "mp4" in target_item.title.lower() or file_url.lower().endswith(".mp4") or "video" in resp.headers.get("Content-Type", ""):
                                     def _extract_from_bytes():
@@ -249,7 +264,10 @@ class AionLogicCoordinator:
                                             cmd = ['ffmpeg', '-y', '-i', temp_path, '-ss', '00:00:00', '-vframes', '1', '-q:v', '2', '-c:v', 'mjpeg', '-f', 'image2', 'pipe:1']
                                             res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=5)
                                             if res.returncode == 0 and res.stdout:
+                                                _LOGGER.debug(f"FFmpeg succes! Framegrootte is {len(res.stdout)} bytes")
                                                 return base64.b64encode(res.stdout).decode('utf-8')
+                                            else:
+                                                _LOGGER.error(f"FFmpeg faalde met returncode {res.returncode}")                                                
                                         finally:
                                             if os.path.exists(temp_path): os.remove(temp_path)
                                         return None
