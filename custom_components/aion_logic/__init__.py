@@ -209,16 +209,20 @@ class AionLogicCoordinator:
                         _LOGGER.debug(f"✅ Cloud map match gevonden: {child.media_content_id}")
                         camera_folder = await media_source.async_browse_media(self.hass, child.media_content_id)
                         if camera_folder and camera_folder.children:
+                            def _sort_key(x):
+                                title = getattr(x, 'title', '')
+                                return title.split('@')[-1].strip() if '@' in title else title
+                            
                             first_child = camera_folder.children[0]
                             # Als dit mappen zijn (camera namen), graaf 1 niveau dieper voor de events
                             if getattr(first_child, 'can_expand', False):
                                 event_folder = await media_source.async_browse_media(self.hass, first_child.media_content_id)
                                 if event_folder and event_folder.children:
-                                    target_item = sorted(event_folder.children, key=lambda x: getattr(x, 'title', ''), reverse=True)[0]
+                                    target_item = sorted(event_folder.children, key=_sort_key, reverse=True)[0]
                                     _LOGGER.debug(f"Meest recente event video gevonden (uit submap): {target_item.title}")
                                     break
                             else:
-                                target_item = sorted(camera_folder.children, key=lambda x: getattr(x, 'title', ''), reverse=True)[0]
+                                target_item = sorted(camera_folder.children, key=_sort_key, reverse=True)[0]
                                 _LOGGER.debug(f"Meest recente event video gevonden: {target_item.title}")
                                 break
                         else:
