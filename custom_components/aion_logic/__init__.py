@@ -1853,37 +1853,45 @@ class AionLogicCoordinator:
         if real_payload["sensors"].get("level_2_intrusion"):
             camera_reflex = real_payload["sensors"].get("camera_reflex", {})
             if camera_reflex.get("base64_image") == "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=":
-                def _find_test_media():
-                    import os, time, subprocess, base64
-                    latest_f = None
-                    latest_t = 0
-                    search_dirs = ["/media/nest", self.hass.config.path("media", "nest")]
-                    for base_dir in search_dirs:
-                        if not os.path.exists(base_dir): continue
-                        for root, _, files in os.walk(base_dir):
-                            for file in files:
-                                if file.lower().endswith(('.jpg', '.jpeg', '.png', '.mp4')):
-                                    fp = os.path.join(root, file)
-                                    try:
-                                        mtime = os.path.getmtime(fp)
-                                        if mtime > latest_t:
-                                            latest_t = mtime
-                                            latest_f = fp
-                                    except: pass
-                    if latest_f:
-                        if latest_f.lower().endswith('.mp4'):
-                            try:
-                                cmd = ['ffmpeg', '-y', '-i', latest_f, '-vframes', '1', '-q:v', '2', '-c:v', 'mjpeg', '-f', 'image2', 'pipe:1']
-                                result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
-                                if result.returncode == 0 and result.stdout:
-                                    return base64.b64encode(result.stdout).decode('utf-8')
-                            except: pass
-                        else:
-                            with open(latest_f, "rb") as f:
-                                return base64.b64encode(f.read()).decode('utf-8')
-                    return None
-                
-                real_b64 = await self.hass.async_add_executor_job(_find_test_media)
+                from homeassistant.components import media_source
+                real_b64 = None
+                try:
+                    media_root = await media_source.async_browse_media(self.hass, "media_source://media")
+                    target_item = None
+                    if media_root and media_root.children:
+                        for child in media_root.children:
+                            if "nest" in child.media_content_id.lower() or "ezviz" in child.media_content_id.lower():
+                                camera_folder = await media_source.async_browse_media(self.hass, child.media_content_id)
+                                if camera_folder and camera_folder.children:
+                                    # Pak altijd het laatste bestand voor de test
+                                    sorted_children = sorted(camera_folder.children, key=lambda x: x.title, reverse=True)
+                                    target_item = sorted_children[0]
+                                    break
+                    
+                    if target_item:
+                        resolved = await media_source.async_resolve_media(self.hass, target_item.media_content_id, None)
+                        file_url = resolved.url
+                        absolute_path = file_url
+                        if file_url.startswith("/media/"):
+                            absolute_path = self.hass.config.path("media", file_url.replace("/media/", "", 1))
+                            
+                        def _extract_test_media():
+                            import os, subprocess, base64
+                            if os.path.exists(absolute_path):
+                                if absolute_path.lower().endswith('.mp4'):
+                                    cmd = ['ffmpeg', '-y', '-i', absolute_path, '-ss', '00:00:00', '-vframes', '1', '-q:v', '2', '-c:v', 'mjpeg', '-f', 'image2', 'pipe:1']
+                                    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=5)
+                                    if res.returncode == 0 and res.stdout:
+                                        return base64.b64encode(res.stdout).decode('utf-8')
+                                else:
+                                    with open(absolute_path, "rb") as f:
+                                        return base64.b64encode(f.read()).decode('utf-8')
+                            return None
+                            
+                        real_b64 = await self.hass.async_add_executor_job(_extract_test_media)
+                except Exception as ex:
+                    _LOGGER.error(f"Fout bij ophalen test media (shadow run): {ex}")
+ 
                 if real_b64:
                     real_payload["sensors"]["camera_reflex"]["base64_image"] = real_b64
         
