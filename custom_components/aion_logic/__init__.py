@@ -155,7 +155,40 @@ class AionLogicCoordinator:
             except Exception as e:
                 _LOGGER.debug(f"Camera Reflex Live genegeerd (Slaapstand of error): {e}")
 
-        # 2. HYBRID FALLBACK: Media Source (Voor Cloud & Lokale proxy media)
+        # 2. PROXY FALLBACK: Entity Picture (Beste voor Cloud/Batterij camera's)
+        if camera_entity:
+            try:
+                state = self.hass.states.get(camera_entity)
+                if state:
+                    entity_picture_url = state.attributes.get("entity_picture")
+                    if entity_picture_url:
+                        _LOGGER.debug(f"Camera Reflex Proxy proberen voor: {entity_picture_url}")
+                        user = next((u for u in self.hass.auth.async_get_users() if u.is_admin and u.is_active), None)
+                        if user and user.refresh_tokens:
+                            refresh_token = list(user.refresh_tokens.values())[0]
+                            token = self.hass.auth.async_create_access_token(refresh_token)
+                            session = async_get_clientsession(self.hass)
+                            
+                            if entity_picture_url.startswith("/"):
+                                is_ssl = getattr(self.hass.config, "api", None) and self.hass.config.api.use_ssl
+                                protocol = "https" if is_ssl else "http"
+                                port = self.hass.config.api.port if getattr(self.hass.config, "api", None) else 8123
+                                url = f"{protocol}://127.0.0.1:{port}{entity_picture_url}"
+                            else:
+                                url = entity_picture_url
+                            
+                            async with session.get(url, headers={"Authorization": f"Bearer {token}"}, ssl=False, timeout=timeout_live) as resp:
+                                if resp.status == 200:
+                                    proxy_bytes = await resp.read()
+                                    if proxy_bytes and len(proxy_bytes) > 15000:
+                                        def _encode_proxy(): return base64.b64encode(proxy_bytes).decode('utf-8')
+                                        return await self.hass.async_add_executor_job(_encode_proxy)
+                                    else:
+                                        _LOGGER.debug(f"Proxy snapshot te klein ({len(proxy_bytes)} bytes), door naar fallback 3.")
+            except Exception as e:
+                _LOGGER.debug(f"Fout bij Entity Picture Proxy: {e}")
+
+        # 3. HYBRID FALLBACK: Media Source (Voor Cloud & Lokale proxy media)
         try:
             media_root = await media_source.async_browse_media(self.hass, "media_source://media")
             target_item = None
