@@ -235,8 +235,11 @@ class AionLogicCoordinator:
                 if file_url.startswith("/api/"):
                     _LOGGER.debug("Start Optie A: Download via interne HA API")
                     users = await self.hass.auth.async_get_users()
-                    user = next((u for u in users if u.is_admin and u.is_active), None)
-                    if user and user.refresh_tokens:
+                    user = next((u for u in users if u.is_admin and u.is_active and u.refresh_tokens), None)
+                    
+                    if not user:
+                        _LOGGER.error("Geen admin gebruiker met refresh_token gevonden. Kan interne API niet aanroepen.")
+                    else:
                         refresh_token = list(user.refresh_tokens.values())[0]
                         token = self.hass.auth.async_create_access_token(refresh_token)
                         
