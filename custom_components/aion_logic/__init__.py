@@ -222,7 +222,8 @@ class AionLogicCoordinator:
                 
                 # Optie A: Cloud Integratie Proxy URL (e.g. /api/nest/...)
                 if file_url.startswith("/api/"):
-                    user = next((u for u in self.hass.auth.async_get_users() if u.is_admin and u.is_active), None)
+                    users = await self.hass.auth.async_get_users()
+                    user = next((u for u in users if u.is_admin and u.is_active), None)
                     if user and user.refresh_tokens:
                         refresh_token = list(user.refresh_tokens.values())[0]
                         token = self.hass.auth.async_create_access_token(refresh_token)
