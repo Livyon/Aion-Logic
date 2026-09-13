@@ -144,8 +144,10 @@ class AionLogicCoordinator:
         if camera_entity:
             try:
                 try:
-                    await self.hass.services.async_call("camera", "turn_on", {"entity_id": camera_entity}, blocking=False)
-                    await asyncio.sleep(1.0)
+                    await asyncio.wait_for(
+                        self.hass.services.async_call("camera", "turn_on", {"entity_id": camera_entity}, blocking=True),
+                        timeout=2.0
+                    )
                 except Exception: pass
                 
                 image_bytes = await asyncio.wait_for(async_get_image(self.hass, camera_entity, timeout=timeout_live), timeout=timeout_live+1.0)
@@ -196,17 +198,23 @@ class AionLogicCoordinator:
 
         # 3. HYBRID FALLBACK: Media Source (Voor Cloud & Lokale proxy media)
         try:
-            media_root = await media_source.async_browse_media(self.hass, "media_source://media")
+            media_root = await media_source.async_browse_media(self.hass, None)
             target_item = None
             if media_root and media_root.children:
                 for child in media_root.children:
                     if "nest" in child.media_content_id.lower() or "ezviz" in child.media_content_id.lower() or "ring" in child.media_content_id.lower():
                         camera_folder = await media_source.async_browse_media(self.hass, child.media_content_id)
                         if camera_folder and camera_folder.children:
-                            # Sorteer op titel (bevat vaak tijdstempel) of ID en pak de nieuwste
-                            sorted_children = sorted(camera_folder.children, key=lambda x: x.title, reverse=True)
-                            target_item = sorted_children[0]
-                            break
+                            first_child = camera_folder.children[0]
+                            # Als dit mappen zijn (camera namen), graaf 1 niveau dieper voor de events
+                            if getattr(first_child, 'can_expand', False):
+                                event_folder = await media_source.async_browse_media(self.hass, first_child.media_content_id)
+                                if event_folder and event_folder.children:
+                                    target_item = sorted(event_folder.children, key=lambda x: getattr(x, 'title', ''), reverse=True)[0]
+                                    break
+                            else:
+                                target_item = sorted(camera_folder.children, key=lambda x: getattr(x, 'title', ''), reverse=True)[0]
+                                break
             
             if target_item:
                 resolved = await media_source.async_resolve_media(self.hass, target_item.media_content_id, None)
