@@ -1508,12 +1508,15 @@ class AionLogicCoordinator:
                                                     timeout=5.0
                                                 )
                                                 
-                                                if image_bytes and image_bytes.content:
+                                                if image_bytes and image_bytes.content and len(image_bytes.content) > 1024:
                                                     def _encode_live():
                                                         return base64.b64encode(image_bytes.content).decode('utf-8')
                                                     snapshot_b64 = await self.hass.async_add_executor_job(_encode_live)
                                                     snapshot_camera = camera_entity
-                                                    _LOGGER.info("📸 Camera Reflex (Live In-Memory): Base64 gegenereerd.")                                                
+                                                    _LOGGER.info("📸 Camera Reflex (Live In-Memory): Base64 gegenereerd.")
+                                                else:
+                                                    dummy_size = len(image_bytes.content) if image_bytes and hasattr(image_bytes, "content") else 0
+                                                    raise ValueError(f"Dummy beeld genegeerd ({dummy_size} bytes, camera waarschijnlijk in slaapstand).")                                                    
                                                     
                                             except asyncio.TimeoutError:
                                                 _LOGGER.warning(f"⏳ Camera Reflex Timeout (Live) voor {camera_entity}. Overschakelen op Media Source mode...")
