@@ -1853,17 +1853,28 @@ class AionLogicCoordinator:
         if real_payload["sensors"].get("level_2_intrusion"):
             camera_reflex = real_payload["sensors"].get("camera_reflex", {})
             if camera_reflex.get("base64_image") == "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=":
-                from homeassistant.components import media_source
+                camera_entity = camera_reflex.get("entity_id")
                 real_b64 = None
-                try:
-                    media_root = await media_source.async_browse_media(self.hass, "media_source://media")
+                
+                if camera_entity:
+                    try:
+                        from homeassistant.components.camera import async_get_image
+                        image_bytes = await asyncio.wait_for(async_get_image(self.hass, camera_entity, timeout=4.0), timeout=5.0)
+                        if image_bytes and image_bytes.content and len(image_bytes.content) > 1024:
+                            def _encode_live_test(): return base64.b64encode(image_bytes.content).decode('utf-8')
+                            real_b64 = await self.hass.async_add_executor_job(_encode_live_test)
+                    except Exception: pass
+
+                if not real_b64:                
+                    from homeassistant.components import media_source
+                    try:
+                        media_root = await media_source.async_browse_media(self.hass, "media_source://media")
                     target_item = None
                     if media_root and media_root.children:
                         for child in media_root.children:
                             if "nest" in child.media_content_id.lower() or "ezviz" in child.media_content_id.lower():
                                 camera_folder = await media_source.async_browse_media(self.hass, child.media_content_id)
                                 if camera_folder and camera_folder.children:
-                                    # Pak altijd het laatste bestand voor de test
                                     sorted_children = sorted(camera_folder.children, key=lambda x: x.title, reverse=True)
                                     target_item = sorted_children[0]
                                     break
