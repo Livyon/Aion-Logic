@@ -1496,87 +1496,77 @@ class AionLogicCoordinator:
                                         
                                     if camera_entity:
                                         try:
-                                            # 1. Probeer altijd EERST de RTSP/ONVIF live snapshot methode
-                                            filename = self.hass.config.path(f"aion_reflex_{camera_entity.split('.')[1]}.jpg")
-                                            snapshot_success = False
-                                            
+                                            from homeassistant.components.camera import async_get_image                                           
                                             try:
                                                 try:
                                                     await self.hass.services.async_call("camera", "turn_on", {"entity_id": camera_entity}, blocking=False)
-                                                    await asyncio.sleep(1.5)
+                                                    await asyncio.sleep(1.0)
                                                 except Exception: pass
-                                                
-                                                await asyncio.wait_for(
-                                                    self.hass.services.async_call("camera", "snapshot", {"entity_id": camera_entity, "filename": filename}, blocking=True),
-                                                    timeout=4.0
+                                                    
+                                                image_bytes = await asyncio.wait_for(
+                                                    async_get_image(self.hass, camera_entity, timeout=4.0),
+                                                    timeout=5.0
                                                 )
-                                                await asyncio.sleep(0.3) # Korte I/O buffer
-                                                if os.path.exists(filename):
-                                                    snapshot_success = True
-                                            except asyncio.TimeoutError:
-                                                _LOGGER.warning(f"⏳ Camera Reflex Timeout (RTSP) voor {camera_entity}. Overschakelen op Hybrid Nest mode...")
-                                            except Exception as e:
-                                                _LOGGER.warning(f"⚠️ Camera Reflex RTSP faalde voor {camera_entity}: {e}. Overschakelen op Hybrid Nest mode...")
-
-                                            # 2. Verwerk de Live Snapshot
-                                            if snapshot_success:
-                                                def _read_live():
-                                                    with open(filename, "rb") as f:
-                                                        b64 = base64.b64encode(f.read()).decode('utf-8')
-                                                    os.remove(filename)
-                                                    return b64
-                                                snapshot_b64 = await self.hass.async_add_executor_job(_read_live)
-                                                snapshot_camera = camera_entity
-                                                _LOGGER.info("📸 Camera Reflex (Live RTSP): Base64 gegenereerd.")
                                                 
-                                            # 3. HYBRID NEST FALLBACK: Zoek het meest recente snapshot in de mediabank
-                                            else:
-                                                def _find_and_read_nest_media():
-                                                    import os
-                                                    import time
-                                                    import subprocess
-                                                    latest_f = None
-                                                    latest_t = 0
-                                                    
-                                                    search_dirs = ["/media/nest", self.hass.config.path("media", "nest")]
-                                                    
-                                                    for base_dir in search_dirs:
-                                                        if not os.path.exists(base_dir): continue
-                                                        for root, _, files in os.walk(base_dir):
-                                                            for file in files:
-                                                                if file.lower().endswith(('.jpg', '.jpeg', '.png', '.mp4')):
-                                                                    fp = os.path.join(root, file)
-                                                                    try:
-                                                                        mtime = os.path.getmtime(fp)
-                                                                        if mtime > latest_t:
-                                                                            latest_t = mtime
-                                                                            latest_f = fp
-                                                                    except: pass
-                                                    
-                                                    # Maximaal 10 minuten oud (voorkomt versturen van oude valse alarmbeelden)
-                                                    if latest_f and (time.time() - latest_t) < 600:
-                                                        if latest_f.lower().endswith('.mp4'):
-                                                            try:
-                                                                # Extract 1e frame via ingebouwde FFmpeg naar memory (pipe)
-                                                                cmd = ['ffmpeg', '-y', '-i', latest_f, '-vframes', '1', '-q:v', '2', '-c:v', 'mjpeg', '-f', 'image2', 'pipe:1']
-                                                                result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
-                                                                if result.returncode == 0 and result.stdout:
-                                                                    return base64.b64encode(result.stdout).decode('utf-8'), f"{latest_f} (FFmpeg Extractie)"
-                                                            except Exception as ex:
-                                                                _LOGGER.warning(f"⚠️ FFmpeg extractie faalde voor {latest_f}: {ex}")
-                                                                return None, None
-                                                        else:
-                                                            with open(latest_f, "rb") as f:
-                                                                return base64.b64encode(f.read()).decode('utf-8'), latest_f
-                                                    return None, None
-                                                    
-                                                nest_b64, found_file = await self.hass.async_add_executor_job(_find_and_read_nest_media)
-                                                if nest_b64:
-                                                    snapshot_b64 = nest_b64
+                                                if image_bytes and image_bytes.content:
+                                                    def _encode_live():
+                                                        return base64.b64encode(image_bytes.content).decode('utf-8')
+                                                    snapshot_b64 = await self.hass.async_add_executor_job(_encode_live)
                                                     snapshot_camera = camera_entity
-                                                    _LOGGER.info(f"📸 Camera Reflex (Hybrid Nest): Lokaal media bestand succesvol verwerkt ({found_file}).")
-                                                else:
-                                                    _LOGGER.error("📸 Camera Reflex faalde volledig: Geen live beeld én geen recente lokale Nest media gevonden.")
+                                                    _LOGGER.info("📸 Camera Reflex (Live In-Memory): Base64 gegenereerd.")                                                
+                                                    
+                                            except asyncio.TimeoutError:
+                                                _LOGGER.warning(f"⏳ Camera Reflex Timeout (Live) voor {camera_entity}. Overschakelen op Media Source mode...")
+                                            except Exception as e:
+                                                _LOGGER.warning(f"⚠️ Camera Reflex Live faalde voor {camera_entity}: {e}. Overschakelen op Media Source mode...")
+
+                                            if not snapshot_b64:
+                                                from homeassistant.components import media_source
+                                                try:
+                                                    media_root = await media_source.async_browse_media(self.hass, "media_source://media")
+                                                    target_item = None
+                                                    
+                                                    if media_root and media_root.children:
+                                                        for child in media_root.children:
+                                                            if "nest" in child.media_content_id.lower() or "ezviz" in child.media_content_id.lower():
+                                                                camera_folder = await media_source.async_browse_media(self.hass, child.media_content_id)
+                                                                if camera_folder and camera_folder.children:
+                                                                    sorted_children = sorted(camera_folder.children, key=lambda x: x.title, reverse=True)
+                                                                    target_item = sorted_children[0]
+                                                                    break
+                                                    
+                                                    if target_item:
+                                                        resolved = await media_source.async_resolve_media(self.hass, target_item.media_content_id, None)
+                                                        file_url = resolved.url
+                                                        
+                                                        absolute_path = file_url
+                                                        if file_url.startswith("/media/"):
+                                                            absolute_path = self.hass.config.path("media", file_url.replace("/media/", "", 1))
+                                                            
+                                                        def _extract_media():
+                                                            import os, time, subprocess
+                                                            if os.path.exists(absolute_path) and (time.time() - os.path.getmtime(absolute_path)) < 600:
+                                                                if absolute_path.lower().endswith('.mp4'):
+                                                                    cmd = ['ffmpeg', '-y', '-i', absolute_path, '-ss', '00:00:00', '-vframes', '1', '-q:v', '2', '-c:v', 'mjpeg', '-f', 'image2', 'pipe:1']
+                                                                    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=5)
+                                                                    if res.returncode == 0 and res.stdout:
+                                                                        return base64.b64encode(res.stdout).decode('utf-8')
+                                                                else:
+                                                                    with open(absolute_path, "rb") as f:
+                                                                        return base64.b64encode(f.read()).decode('utf-8')
+                                                            return None
+                                                            
+                                                        nest_b64 = await self.hass.async_add_executor_job(_extract_media)
+                                                        if nest_b64:
+                                                            snapshot_b64 = nest_b64
+                                                            snapshot_camera = camera_entity
+                                                            _LOGGER.info(f"📸 Camera Reflex (Media Source): Bestand succesvol verwerkt ({absolute_path}).")
+                                                        else:
+                                                            _LOGGER.warning("📸 Camera Reflex (Media Source): Bestand te oud of onleesbaar.")
+                                                    else:
+                                                        _LOGGER.error("📸 Camera Reflex faalde volledig: Geen live beeld én geen recente Media Source bestanden gevonden.")
+                                                except Exception as ex:
+                                                    _LOGGER.error(f"Fout bij Media Source Fallback: {ex}")
                                         except Exception as e:
                                             _LOGGER.error(f"Fout bij Camera Reflex: {e}")
                                     else:
