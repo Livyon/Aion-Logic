@@ -1865,69 +1865,66 @@ class AionLogicCoordinator:
                             real_b64 = await self.hass.async_add_executor_job(_encode_live_test)
                     except Exception: pass
 
-                if not real_b64:                
+                if not real_b64:
                     from homeassistant.components import media_source
                     try:
                         media_root = await media_source.async_browse_media(self.hass, "media_source://media")
-                    target_item = None
-                    if media_root and media_root.children:
-                        for child in media_root.children:
-                            if "nest" in child.media_content_id.lower() or "ezviz" in child.media_content_id.lower():
-                                camera_folder = await media_source.async_browse_media(self.hass, child.media_content_id)
-                                if camera_folder and camera_folder.children:
-                                    sorted_children = sorted(camera_folder.children, key=lambda x: x.title, reverse=True)
-                                    target_item = sorted_children[0]
-                                    break
-                    
-                    if target_item:
-                        resolved = await media_source.async_resolve_media(self.hass, target_item.media_content_id, None)
-                        file_url = resolved.url
-                        absolute_path = file_url
-                        if file_url.startswith("/media/"):
-                            absolute_path = self.hass.config.path("media", file_url.replace("/media/", "", 1))
-                            
-                        def _extract_test_media():
-                            import os, subprocess, base64
-                            if os.path.exists(absolute_path):
-                                if absolute_path.lower().endswith('.mp4'):
-                                    cmd = ['ffmpeg', '-y', '-i', absolute_path, '-ss', '00:00:00', '-vframes', '1', '-q:v', '2', '-c:v', 'mjpeg', '-f', 'image2', 'pipe:1']
-                                    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=5)
-                                    if res.returncode == 0 and res.stdout:
-                                        return base64.b64encode(res.stdout).decode('utf-8')
-                                else:
-                                    with open(absolute_path, "rb") as f:
-                                        return base64.b64encode(f.read()).decode('utf-8')
-                            return None
-                            
-                        real_b64 = await self.hass.async_add_executor_job(_extract_test_media)
-                except Exception as ex:
-                    _LOGGER.error(f"Fout bij ophalen test media (shadow run): {ex}")
+                        target_item = None
+                        if media_root and media_root.children:
+                            for child in media_root.children:
+                                if "nest" in child.media_content_id.lower() or "ezviz" in child.media_content_id.lower():
+                                    camera_folder = await media_source.async_browse_media(self.hass, child.media_content_id)
+                                    if camera_folder and camera_folder.children:
+                                        # Pak altijd het laatste bestand voor de test
+                                        sorted_children = sorted(camera_folder.children, key=lambda x: x.title, reverse=True)
+                                        target_item = sorted_children[0]
+                                        break
+                        
+                        if target_item:
+                            resolved = await media_source.async_resolve_media(self.hass, target_item.media_content_id, None)
+                            file_url = resolved.url
+                            absolute_path = file_url
+                            if file_url.startswith("/media/"):
+                                absolute_path = self.hass.config.path("media", file_url.replace("/media/", "", 1))
+                                
+                            def _extract_test_media():
+                                import os, subprocess, base64
+                                if os.path.exists(absolute_path):
+                                    if absolute_path.lower().endswith('.mp4'):
+                                        cmd = ['ffmpeg', '-y', '-i', absolute_path, '-ss', '00:00:00', '-vframes', '1', '-q:v', '2', '-c:v', 'mjpeg', '-f', 'image2', 'pipe:1']
+                                        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=5)
+                                        if res.returncode == 0 and res.stdout:
+                                            return base64.b64encode(res.stdout).decode('utf-8')
+                                    else:
+                                        with open(absolute_path, "rb") as f:
+                                            return base64.b64encode(f.read()).decode('utf-8')
+                                return None
+                                
+                            real_b64 = await self.hass.async_add_executor_job(_extract_test_media)
+                    except Exception as ex:
+                        _LOGGER.error(f"Fout bij ophalen test media (shadow run): {ex}")
  
                 if real_b64:
                     real_payload["sensors"]["camera_reflex"]["base64_image"] = real_b64
         
-        # 3. Stuur naar de Cloud (Echte test van verbinding!)
         try:
             start_time = dt_util.now()
             response = await self.api_client.trigger_main_logic(real_payload)
             duration = (dt_util.now() - start_time).total_seconds()
             
-            # 4. Filteren resultaat (Geen uitvoering!)
             actions = response.get("actions", [])
             scenario = response.get("scenario", "Onbekend")
 
-            # 5. Live Comms Test: Voer ALLEEN communicatie-acties (telefoon/sms/push) lokaal uit
             if is_live_comms:
                 safe_actions = [a for a in actions if a.get("service", "").startswith("notify.")]
                 await self._execute_actions(safe_actions, real_payload.get("climate_zones", {}))
                         
-            # We voeren _execute_actions NIET uit. We returnen het gewoon.
             return {
                 "success": True,
                 "latency": duration,
                 "scenario": scenario,
-                "actions": actions, # Dit zijn de acties die hij ZOU doen
-                "payload_sent": real_payload, # Ter debug
+                "actions": actions,
+                "payload_sent": real_payload,
                 "learning_result": response.get("learning_result")
             }
             
@@ -1952,7 +1949,6 @@ class AionLogicSimulationView(HomeAssistantView):
             data = await request.json()
             _LOGGER.info("🧪 Shadow Run verzoek ontvangen van Aion Command Center.")
             
-            # Voer de logica uit in 'Shadow Mode' (geen echte acties)
             result = await self.coordinator.async_run_shadow_logic(data)
             return self.json(result)
         except Exception as e:
