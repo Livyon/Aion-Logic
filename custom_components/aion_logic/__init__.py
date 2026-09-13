@@ -1508,7 +1508,7 @@ class AionLogicCoordinator:
                                                     timeout=5.0
                                                 )
                                                 
-                                                if image_bytes and image_bytes.content and len(image_bytes.content) > 1024:
+                                                if image_bytes and image_bytes.content and len(image_bytes.content) > 15000:
                                                     def _encode_live():
                                                         return base64.b64encode(image_bytes.content).decode('utf-8')
                                                     snapshot_b64 = await self.hass.async_add_executor_job(_encode_live)
@@ -1860,7 +1860,7 @@ class AionLogicCoordinator:
                     try:
                         from homeassistant.components.camera import async_get_image
                         image_bytes = await asyncio.wait_for(async_get_image(self.hass, camera_entity, timeout=4.0), timeout=5.0)
-                        if image_bytes and image_bytes.content and len(image_bytes.content) > 1024:
+                        if image_bytes and image_bytes.content and len(image_bytes.content) > 15000:
                             def _encode_live_test(): return base64.b64encode(image_bytes.content).decode('utf-8')
                             real_b64 = await self.hass.async_add_executor_job(_encode_live_test)
                     except Exception: pass
