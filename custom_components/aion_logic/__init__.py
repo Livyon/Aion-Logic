@@ -1857,6 +1857,43 @@ class AionLogicCoordinator:
         if "state_overlay" in override_data:
             real_payload["state_overlay"] = override_data["state_overlay"]
 
+        if real_payload["sensors"].get("level_2_intrusion"):
+            camera_reflex = real_payload["sensors"].get("camera_reflex", {})
+            if camera_reflex.get("base64_image") == "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=":
+                def _find_test_media():
+                    import os, time, subprocess, base64
+                    latest_f = None
+                    latest_t = 0
+                    search_dirs = ["/media/nest", self.hass.config.path("media", "nest")]
+                    for base_dir in search_dirs:
+                        if not os.path.exists(base_dir): continue
+                        for root, _, files in os.walk(base_dir):
+                            for file in files:
+                                if file.lower().endswith(('.jpg', '.jpeg', '.png', '.mp4')):
+                                    fp = os.path.join(root, file)
+                                    try:
+                                        mtime = os.path.getmtime(fp)
+                                        if mtime > latest_t:
+                                            latest_t = mtime
+                                            latest_f = fp
+                                    except: pass
+                    if latest_f:
+                        if latest_f.lower().endswith('.mp4'):
+                            try:
+                                cmd = ['ffmpeg', '-y', '-i', latest_f, '-vframes', '1', '-q:v', '2', '-c:v', 'mjpeg', '-f', 'image2', 'pipe:1']
+                                result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
+                                if result.returncode == 0 and result.stdout:
+                                    return base64.b64encode(result.stdout).decode('utf-8')
+                            except: pass
+                        else:
+                            with open(latest_f, "rb") as f:
+                                return base64.b64encode(f.read()).decode('utf-8')
+                    return None
+                
+                real_b64 = await self.hass.async_add_executor_job(_find_test_media)
+                if real_b64:
+                    real_payload["sensors"]["camera_reflex"]["base64_image"] = real_b64
+        
         # 3. Stuur naar de Cloud (Echte test van verbinding!)
         try:
             start_time = dt_util.now()
