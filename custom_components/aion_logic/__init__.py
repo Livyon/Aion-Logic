@@ -133,9 +133,9 @@ class AionLogicCoordinator:
         self._fail_count = 0 
         self._fail_threshold = 3 
 
-    async def _async_extract_camera_media(self, camera_entity, timeout_live=4.0):
+    async def _async_extract_camera_media(self, camera_entity, timeout_live=4.0, ignore_time_limit=False):
         """Haalt het beste beeld van de camera (Live of Media Source) als base64."""
-        import base64, os, subprocess
+        import base64, os, subprocess, time
         from homeassistant.components.camera import async_get_image
         from homeassistant.components import media_source
         from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -181,10 +181,13 @@ class AionLogicCoordinator:
                         token = self.hass.auth.async_create_access_token(refresh_token)
                         
                         session = async_get_clientsession(self.hass)
-                        port = self.hass.http.server_port
-                        url = f"http://127.0.0.1:{port}{file_url}"
                         
-                        async with session.get(url, headers={"Authorization": f"Bearer {token}"}) as resp:
+                        is_ssl = self.hass.config.api.use_ssl if getattr(self.hass.config, "api", None) else False
+                        protocol = "https" if is_ssl else "http"
+                        port = self.hass.config.api.port if getattr(self.hass.config, "api", None) else 8123
+                        url = f"{protocol}://127.0.0.1:{port}{file_url}"
+                        
+                        async with session.get(url, headers={"Authorization": f"Bearer {token}"}, ssl=False) as resp:
                             if resp.status == 200:
                                 media_data = await resp.read()
                                 
@@ -214,6 +217,9 @@ class AionLogicCoordinator:
                     
                 def _extract_local_media():
                     if os.path.exists(absolute_path):
+                        if not ignore_time_limit and (time.time() - os.path.getmtime(absolute_path)) > 600:
+                            return None
+                        
                         if absolute_path.lower().endswith('.mp4'):
                             cmd = ['ffmpeg', '-y', '-i', absolute_path, '-ss', '00:00:00', '-vframes', '1', '-q:v', '2', '-c:v', 'mjpeg', '-f', 'image2', 'pipe:1']
                             res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=5)
@@ -1886,7 +1892,7 @@ class AionLogicCoordinator:
                 real_b64 = None
                 
                 if camera_entity:
-                    real_b64 = await self._async_extract_camera_media(camera_entity, timeout_live=4.0)
+                    real_b64 = await self._async_extract_camera_media(camera_entity, timeout_live=4.0, ignore_time_limit=True)
  
                 if real_b64:
                     real_payload["sensors"]["camera_reflex"]["base64_image"] = real_b64
