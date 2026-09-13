@@ -162,29 +162,35 @@ class AionLogicCoordinator:
                 if state:
                     entity_picture_url = state.attributes.get("entity_picture")
                     if entity_picture_url:
-                        _LOGGER.debug(f"Camera Reflex Proxy proberen voor: {entity_picture_url}")
-                        user = next((u for u in self.hass.auth.async_get_users() if u.is_admin and u.is_active), None)
-                        if user and user.refresh_tokens:
-                            refresh_token = list(user.refresh_tokens.values())[0]
-                            token = self.hass.auth.async_create_access_token(refresh_token)
-                            session = async_get_clientsession(self.hass)
+                        _LOGGER.debug(f"Camera Reflex Proxy: URL Gevonden: {entity_picture_url}")
+                        
+                        from homeassistant.helpers.network import get_url
+                        try:
+                            base_url = get_url(self.hass, prefer_internal=True)
+                        except Exception:
+                            is_ssl = getattr(self.hass.config, "api", None) and getattr(self.hass.config.api, "use_ssl", False)
+                            port = getattr(self.hass.config.api, "port", 8123) if getattr(self.hass.config, "api", None) else 8123
+                            base_url = f"{'https' if is_ssl else 'http'}://127.0.0.1:{port}"
                             
-                            if entity_picture_url.startswith("/"):
-                                is_ssl = getattr(self.hass.config, "api", None) and self.hass.config.api.use_ssl
-                                protocol = "https" if is_ssl else "http"
-                                port = self.hass.config.api.port if getattr(self.hass.config, "api", None) else 8123
-                                url = f"{protocol}://127.0.0.1:{port}{entity_picture_url}"
+                        if entity_picture_url.startswith("/"):
+                            url = f"{base_url.rstrip('/')}{entity_picture_url}"
+                        else:
+                            url = entity_picture_url
+                            
+                        _LOGGER.debug(f"Camera Reflex Proxy: Fetching van interne URL: {url}")
+                        session = async_get_clientsession(self.hass)
+                        
+                        async with session.get(url, ssl=False, timeout=timeout_live) as resp:
+                            if resp.status == 200:
+                                proxy_bytes = await resp.read()
+                                _LOGGER.debug(f"Camera Reflex Proxy: Succes, grootte is {len(proxy_bytes)} bytes")
+                                if proxy_bytes and len(proxy_bytes) > 8000:
+                                    def _encode_proxy(): return base64.b64encode(proxy_bytes).decode('utf-8')
+                                    return await self.hass.async_add_executor_job(_encode_proxy)
+                                else:
+                                    _LOGGER.debug(f"Camera Reflex Proxy: Snapshot te klein ({len(proxy_bytes)} bytes). Valt door naar fallback 3.")
                             else:
-                                url = entity_picture_url
-                            
-                            async with session.get(url, headers={"Authorization": f"Bearer {token}"}, ssl=False, timeout=timeout_live) as resp:
-                                if resp.status == 200:
-                                    proxy_bytes = await resp.read()
-                                    if proxy_bytes and len(proxy_bytes) > 15000:
-                                        def _encode_proxy(): return base64.b64encode(proxy_bytes).decode('utf-8')
-                                        return await self.hass.async_add_executor_job(_encode_proxy)
-                                    else:
-                                        _LOGGER.debug(f"Proxy snapshot te klein ({len(proxy_bytes)} bytes), door naar fallback 3.")
+                                _LOGGER.debug(f"Camera Reflex Proxy: Fout bij ophalen, HTTP status: {resp.status}")
             except Exception as e:
                 _LOGGER.debug(f"Fout bij Entity Picture Proxy: {e}")
 
