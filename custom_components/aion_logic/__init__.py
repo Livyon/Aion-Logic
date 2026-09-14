@@ -209,21 +209,29 @@ class AionLogicCoordinator:
                         _LOGGER.debug(f"✅ Cloud map match gevonden: {child.media_content_id}")
                         camera_folder = await media_source.async_browse_media(self.hass, child.media_content_id)
                         if camera_folder and camera_folder.children:
+                            cam_dev_id = ""
+                            cam_slug = camera_entity.split(".")[1].lower() if camera_entity else ""
+                            if camera_entity:
+                                ent_reg = async_get_entity_registry(self.hass)
+                                cam_ent = ent_reg.async_get(camera_entity)
+                                if cam_ent and cam_ent.device_id: cam_dev_id = cam_ent.device_id.lower()
+                             
                             def _sort_key(x):
                                 title = getattr(x, 'title', '')
                                 return title.split('@')[-1].strip() if '@' in title else title
                             
-                            first_child = camera_folder.children[0]
-                            # Als dit mappen zijn (camera namen), graaf 1 niveau dieper voor de events
-                            if getattr(first_child, 'can_expand', False):
-                                event_folder = await media_source.async_browse_media(self.hass, first_child.media_content_id)
-                                if event_folder and event_folder.children:
-                                    target_item = sorted(event_folder.children, key=_sort_key, reverse=True)[0]
-                                    _LOGGER.debug(f"Meest recente event video gevonden (uit submap): {target_item.title}")
-                                    break
-                            else:
-                                target_item = sorted(camera_folder.children, key=_sort_key, reverse=True)[0]
-                                _LOGGER.debug(f"Meest recente event video gevonden: {target_item.title}")
+                            for sub_folder in camera_folder.children:
+                                sub_id = sub_folder.media_content_id.lower()
+                                sub_title = getattr(sub_folder, 'title', '').lower()
+                                
+                                if (cam_dev_id and cam_dev_id in sub_id) or (cam_slug in sub_id) or (cam_slug in sub_title):
+                                    if getattr(sub_folder, 'can_expand', False):
+                                        event_folder = await media_source.async_browse_media(self.hass, sub_folder.media_content_id)
+                                        if event_folder and event_folder.children:
+                                            target_item = sorted(event_folder.children, key=_sort_key, reverse=True)[0]
+                                            _LOGGER.debug(f"Geverifieerde video gevonden voor {camera_entity}: {target_item.title}")
+                                            break
+                            if target_item:
                                 break
                         else:
                             _LOGGER.debug(f"De map {child.media_content_id} bevatte geen media.")
