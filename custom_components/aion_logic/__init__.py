@@ -199,6 +199,17 @@ class AionLogicCoordinator:
         # 3. HYBRID FALLBACK: Media Source (Voor Cloud & Lokale proxy media)
         try:
             _LOGGER.debug("Start Media Source Fallback (Stap 3)...")
+            
+            # --- FAIL-FAST: Google Nest Indoor/Outdoor Beperking ---
+            if camera_entity:
+                ent_reg = async_get_entity_registry(self.hass)
+                cam_ent = ent_reg.async_get(camera_entity)
+                if cam_ent and cam_ent.platform == "nest":
+                    cam_name = (cam_ent.original_name or "").lower()
+                    is_doorbell = "doorbell" in camera_entity.lower() or "deurbel" in camera_entity.lower() or "doorbell" in cam_name or "deurbel" in cam_name
+                    if not is_doorbell:
+                        _LOGGER.warning(f"📸 Camera Reflex: Nest Indoor/Outdoor gedetecteerd ({camera_entity}). API levert geen videoclips. Fail-Fast geactiveerd.")
+                        return None            
             media_root = await media_source.async_browse_media(self.hass, None)
             target_item = None
             if media_root and media_root.children:
