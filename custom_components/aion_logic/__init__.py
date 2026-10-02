@@ -1955,8 +1955,8 @@ class AionLogicCoordinator:
         is_live_comms = (override_data.get("simulation") == "live_comms_test")
         
         if is_live_comms:
-            # Verwijder de simulatie-vlag zodat de Cloud het als 100% ECHT behandelt
-            real_payload.pop("simulation", None)
+            # Behoud de simulatie-vlag zodat de geüpdatete Cloud het correct afhandelt
+            real_payload["simulation"] = "live_comms_test"
             
             for p_id in real_payload.get("persons", {}):
                 real_payload["persons"][p_id]["state"] = "not_home"
