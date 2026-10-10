@@ -128,6 +128,7 @@ class AionLogicCoordinator:
         self._startup_time = dt_util.utcnow()
         self._person_departure_time = {}
         self._person_departure_fuzzy = {}
+        self._tag_last_changed = {}
         
         # --- DEAD MAN'S SWITCH ---
         self._fail_count = 0 
@@ -796,6 +797,7 @@ class AionLogicCoordinator:
                 old_p = is_present(old_s)
                 
                 if new_p != old_p:
+                    self._tag_last_changed[eid] = dt_util.utcnow().isoformat()                    
                     scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
                     eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else max(300, GHOST_WINDOW_SECONDS)
                     
@@ -1129,10 +1131,16 @@ class AionLogicCoordinator:
                     if (dt_util.utcnow() - departed_at).total_seconds() < (eff_ghost_window - 2):
                         is_home = True
                         is_ghost_masked = True
-                        
+
+                # Bepaal het échte moment van statuswijziging (Fluctuatie filter)
+                real_last_changed = self._tag_last_changed.get(tag_id)
+                if not real_last_changed:
+                    # Fallback bij startup/herladen: Voorkom false-positive 'recente thuiskomst'
+                    real_last_changed = self._startup_time.isoformat()
+                                                
                 persons_data[tag_id] = {
                     "state": "home" if is_home else "not_home",
-                    "last_changed": state_obj.last_changed.isoformat() if state_obj.last_changed else None,
+                    "last_changed": real_last_changed,
                     "gps_accuracy": 0.0,
                     "is_bounce": False,
                     "is_restart": False,
