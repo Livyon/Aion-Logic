@@ -54,7 +54,7 @@
                     "night_start_time": "Starttijd Nachtmodus",
                     "minutes_per_degree": "Minuten per graad (Startwaarde)",
                     "person_entities": "Bewoners (Home Assistant Users)",
-                    "presence_sensors": "Extra Sensoren (Tags/Deurcontacten)",
+                    "presence_sensors": "Fysieke Tags & Aanwezigheidssensoren (BTHome/BLE/Radar)",
                     "enable_pet_mode": "🐾 Huisdiermodus (Negeer bewegingsmelders voor globale afwezigheid)",
                     "early_bird_sensors": "Early Bird Triggers (Welke lampen of sensoren wijzen op vroege ontwaking?)",
                     "early_bird_window": "Early Bird Window (Hoeveel minuten vóór de wekker mag dit het alarm al afzetten?)"
