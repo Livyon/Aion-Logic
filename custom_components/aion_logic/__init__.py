@@ -780,8 +780,42 @@ class AionLogicCoordinator:
             if uid := self._entity_registry.async_get_entity_id("switch", DOMAIN, f"{self.entry.entry_id}_{switch_key}"):
                 triggers.append(uid)
         
-        if e := self.options.get("presence_sensors"): triggers.extend(e)
         if e := self.options.get("wifi_tracker_sensors"): triggers.extend(e)
+
+        # --- Fysieke Tag Tracker (Zero-Code BTHome Integratie) ---
+        if presence_sensors := self.options.get("presence_sensors", []):
+            async def async_handle_tag(event):
+                new_s = event.data.get("new_state")
+                old_s = event.data.get("old_state")
+                eid = event.data.get("entity_id")
+                
+                def is_present(st):
+                    return st and str(st.state).lower() not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]
+
+                new_p = is_present(new_s)
+                old_p = is_present(old_s)
+                
+                if new_p != old_p:
+                    if not new_p: # Vertrek
+                        self._person_departure_time[eid] = dt_util.utcnow()
+                        async def verify_tag_departure(_):
+                            current = self._get_state(eid)
+                            class DummyState: 
+                                def __init__(self, s): self.state = s
+                            if not is_present(DummyState(current)):
+                                _LOGGER.info(f"🚶‍♂️ Tag Vertrek geverifieerd voor '{eid}'.")
+                                await self.async_trigger_main_logic(event)
+                            else:
+                                _LOGGER.debug(f"👻 Tag Ghost Bounce geannuleerd voor '{eid}'.")
+                        from homeassistant.helpers.event import async_call_later
+                        self._listeners.append(async_call_later(self.hass, 180, verify_tag_departure))
+                    else: # Thuiskomst
+                        _LOGGER.info(f"🔑 Fysieke Tag gedetecteerd: '{eid}'. Trigger Hoofdlogica.")
+                        await asyncio.sleep(0.5)
+                        await self.async_trigger_main_logic(event)
+
+            _LOGGER.debug(f"Listener voor Fysieke Tags/Sensoren geregistreerd: {presence_sensors}")
+            self._listeners.append(async_track_state_change_event(self.hass, presence_sensors, async_handle_tag))            
 
         if wp_motion := self.options.get("wall_panel_motion_sensor"):
             triggers.append(wp_motion)
@@ -1074,6 +1108,30 @@ class AionLogicCoordinator:
                     "is_restart": is_recent_restart,
                     "is_ghost_masked": is_ghost_masked
                 }
+
+        # Zero-Code Tags: Injecteer BTHome tags als pseudo-personen voor naadloze Cloud verwerking
+        for tag_id in self.options.get("presence_sensors", []):
+            state_obj = self.hass.states.get(tag_id)
+            if state_obj:
+                val = str(state_obj.state).lower()
+                is_home = val not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]
+                
+                # Tag Ghost Bounce Masking (180s)
+                departed_at = self._person_departure_time.get(tag_id)
+                is_ghost_masked = False
+                if not is_home and departed_at:
+                    if (dt_util.utcnow() - departed_at).total_seconds() < 178:
+                        is_home = True
+                        is_ghost_masked = True
+                        
+                persons_data[tag_id] = {
+                    "state": "home" if is_home else "not_home",
+                    "last_changed": state_obj.last_changed.isoformat() if state_obj.last_changed else None,
+                    "gps_accuracy": 0.0,
+                    "is_bounce": False,
+                    "is_restart": False,
+                    "is_ghost_masked": is_ghost_masked
+                }                
         
         persons_home = any(p.get("state") == "home" for p in persons_data.values())
         if self._get_internal_switch_state("guest_mode") == "on": persons_home = True
