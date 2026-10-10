@@ -796,6 +796,9 @@ class AionLogicCoordinator:
                 old_p = is_present(old_s)
                 
                 if new_p != old_p:
+                    scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
+                    eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else max(300, GHOST_WINDOW_SECONDS)
+                    
                     if not new_p: # Vertrek
                         self._person_departure_time[eid] = dt_util.utcnow()
                         async def verify_tag_departure(_):
@@ -808,7 +811,7 @@ class AionLogicCoordinator:
                             else:
                                 _LOGGER.debug(f"👻 Tag Ghost Bounce geannuleerd voor '{eid}'.")
                         from homeassistant.helpers.event import async_call_later
-                        self._listeners.append(async_call_later(self.hass, 180, verify_tag_departure))
+                        self._listeners.append(async_call_later(self.hass, eff_ghost_window, verify_tag_departure))
                     else: # Thuiskomst
                         _LOGGER.info(f"🔑 Fysieke Tag gedetecteerd: '{eid}'. Trigger Hoofdlogica.")
                         await asyncio.sleep(0.5)
@@ -1116,11 +1119,14 @@ class AionLogicCoordinator:
                 val = str(state_obj.state).lower()
                 is_home = val not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]
                 
-                # Tag Ghost Bounce Masking (180s)
+                # Tag Ghost Bounce Masking (Dynamisch)
+                scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
+                eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else max(300, GHOST_WINDOW_SECONDS)
+
                 departed_at = self._person_departure_time.get(tag_id)
                 is_ghost_masked = False
                 if not is_home and departed_at:
-                    if (dt_util.utcnow() - departed_at).total_seconds() < 178:
+                    if (dt_util.utcnow() - departed_at).total_seconds() < (eff_ghost_window - 2):
                         is_home = True
                         is_ghost_masked = True
                         
