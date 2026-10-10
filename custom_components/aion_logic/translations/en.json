@@ -53,7 +53,7 @@
                     "night_start_time": "Night Mode Start Time",
                     "minutes_per_degree": "Minutes per degree (Initial value)",
                     "person_entities": "Residents (Home Assistant Users)",
-                    "presence_sensors": "Physical Tags & Presence Sensors (BTHome/BLE/Radar)"
+                    "presence_sensors": "Physical Tags & Presence Sensors (BTHome/BLE/Radar)",
                     "enable_pet_mode": "🐾 Pet Mode (Ignore motion sensors when away)",
                     "early_bird_sensors": "Early Bird Triggers (Which lights or sensors indicate early waking?)",
                     "early_bird_window": "Early Bird Window (Minutes before alarm allowed to disable it?)"
