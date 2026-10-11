@@ -821,7 +821,26 @@ class AionLogicCoordinator:
 
             _LOGGER.debug(f"Listener voor Fysieke Tags/Sensoren geregistreerd: {presence_sensors}")
             self._listeners.append(async_track_state_change_event(self.hass, presence_sensors, async_handle_tag))            
-
+            
+            async def _monitor_stale_tags(_):
+                now = dt_util.utcnow()
+                for eid in presence_sensors:
+                    state_obj = self.hass.states.get(eid)
+                    if state_obj and eid.startswith("sensor."):
+                        val = str(state_obj.state).lower()
+                        is_present = val not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]
+                        if is_present:
+                            last_upd = state_obj.last_updated
+                            if last_upd and (now - last_upd).total_seconds() > 240: # 4 min geen hartslag
+                                if not self._person_departure_time.get(eid):
+                                    _LOGGER.info(f"📡 Tag {eid} is al 4 minuten stil. Start vertrek-procedure.")
+                                    class DummyState:
+                                        def __init__(self, s): self.state = s
+                                    class DummyEvent:
+                                        def __init__(self, e, ns, os): self.data = {"entity_id": e, "new_state": ns, "old_state": os}
+                                    await async_handle_tag(DummyEvent(eid, DummyState("unavailable"), DummyState(state_obj.state)))
+            self._listeners.append(async_track_time_interval(self.hass, _monitor_stale_tags, timedelta(minutes=1)))
+            
         if wp_motion := self.options.get("wall_panel_motion_sensor"):
             triggers.append(wp_motion)
             
@@ -1125,6 +1144,11 @@ class AionLogicCoordinator:
                 scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
                 eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else max(300, GHOST_WINDOW_SECONDS)
 
+                # BTHome Stale Check (Forceer afwezig in payload als tag bevroren is)
+                if is_home and tag_id.startswith("sensor."):
+                    if state_obj.last_updated and (dt_util.utcnow() - state_obj.last_updated).total_seconds() > 240:
+                        is_home = False
+                
                 departed_at = self._person_departure_time.get(tag_id)
                 is_ghost_masked = False
                 if not is_home and departed_at:
