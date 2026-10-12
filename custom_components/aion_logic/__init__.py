@@ -804,10 +804,18 @@ class AionLogicCoordinator:
                     if not new_p: # Vertrek
                         self._person_departure_time[eid] = dt_util.utcnow()
                         async def verify_tag_departure(_):
-                            current = self._get_state(eid)
-                            class DummyState: 
-                                def __init__(self, s): self.state = s
-                            if not is_present(DummyState(current)):
+                        state_obj = self.hass.states.get(eid)
+                        is_still_present = False
+                        if state_obj:
+                            val = str(state_obj.state).lower()
+                            if val not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]:
+                                if state_obj.last_updated:
+                                    if (dt_util.utcnow() - state_obj.last_updated).total_seconds() < 180:
+                                        is_still_present = True
+                                else:
+                                    is_still_present = True
+                        
+                        if not is_still_present:
                                 _LOGGER.info(f"🚶‍♂️ Tag Vertrek geverifieerd voor '{eid}'.")
                                 await self.async_trigger_main_logic(event)
                             else:
@@ -831,9 +839,9 @@ class AionLogicCoordinator:
                         is_present = val not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]
                         if is_present:
                             last_upd = state_obj.last_updated
-                            if last_upd and (now - last_upd).total_seconds() > 240: # 4 min geen hartslag
+                            if last_upd and (now - last_upd).total_seconds() > 180: # 3 min geen hartslag
                                 if not self._person_departure_time.get(eid):
-                                    _LOGGER.info(f"📡 Tag {eid} is al 4 minuten stil. Start vertrek-procedure.")
+                                    _LOGGER.info(f"📡 Tag {eid} is al 3 minuten stil. Start vertrek-procedure.")
                                     class DummyState:
                                         def __init__(self, s): self.state = s
                                     class DummyEvent:
@@ -1146,7 +1154,7 @@ class AionLogicCoordinator:
 
                 # BTHome Stale Check (Forceer afwezig in payload als tag bevroren is)
                 if is_home and tag_id.startswith("sensor."):
-                    if state_obj.last_updated and (dt_util.utcnow() - state_obj.last_updated).total_seconds() > 240:
+                    if state_obj.last_updated and (dt_util.utcnow() - state_obj.last_updated).total_seconds() > 180:
                         is_home = False
                 
                 departed_at = self._person_departure_time.get(tag_id)
