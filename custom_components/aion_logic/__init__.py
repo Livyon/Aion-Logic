@@ -803,19 +803,20 @@ class AionLogicCoordinator:
                     
                     if not new_p: # Vertrek
                         self._person_departure_time[eid] = dt_util.utcnow()
-                        async def verify_tag_departure(_):
-                        state_obj = self.hass.states.get(eid)
-                        is_still_present = False
-                        if state_obj:
-                            val = str(state_obj.state).lower()
-                            if val not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]:
-                                if state_obj.last_updated:
-                                    if (dt_util.utcnow() - state_obj.last_updated).total_seconds() < 180:
-                                        is_still_present = True
-                                else:
-                                    is_still_present = True
                         
-                        if not is_still_present:
+                        async def verify_tag_departure(_):
+                            state_obj = self.hass.states.get(eid)
+                            is_still_present = False
+                            if state_obj:
+                                val = str(state_obj.state).lower()
+                                if val not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]:
+                                    if state_obj.last_updated:
+                                        if (dt_util.utcnow() - state_obj.last_updated).total_seconds() < 180:
+                                            is_still_present = True
+                                    else:
+                                        is_still_present = True
+                        
+                            if not is_still_present:
                                 _LOGGER.info(f"🚶‍♂️ Tag Vertrek geverifieerd voor '{eid}'.")
                                 await self.async_trigger_main_logic(event)
                             else:
