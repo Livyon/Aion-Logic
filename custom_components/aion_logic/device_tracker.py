@@ -36,7 +36,6 @@ class AionTagTracker(TrackerEntity):
         self._is_connected = False
         self._attr_unique_id = f"{entry_id}_{source_entity_id}_tracker"
         
-        # Maak de naam visueel netjes: "Aion Shelly Blu Signal Strength"
         clean_name = source_entity_id.split('.')[-1].replace('_', ' ').title()
         self._attr_name = f"Aion {clean_name}"
 
