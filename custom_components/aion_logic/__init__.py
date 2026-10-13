@@ -34,7 +34,7 @@ from .api import AionLogicApiClient, ApiAuthError, ApiConnectionError, ApiTimeou
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SWITCH, Platform.CALENDAR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SWITCH, Platform.CALENDAR, Platform.DEVICE_TRACKER]
 
 async def async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Wordt aangeroepen wanneer de opties worden bijgewerkt."""
@@ -128,7 +128,6 @@ class AionLogicCoordinator:
         self._startup_time = dt_util.utcnow()
         self._person_departure_time = {}
         self._person_departure_fuzzy = {}
-        self._tag_last_changed = {}
         
         # --- DEAD MAN'S SWITCH ---
         self._fail_count = 0 
@@ -782,73 +781,6 @@ class AionLogicCoordinator:
                 triggers.append(uid)
         
         if e := self.options.get("wifi_tracker_sensors"): triggers.extend(e)
-
-        # --- Fysieke Tag Tracker (Zero-Code BTHome Integratie) ---
-        if presence_sensors := self.options.get("presence_sensors", []):
-            async def async_handle_tag(event):
-                new_s = event.data.get("new_state")
-                old_s = event.data.get("old_state")
-                eid = event.data.get("entity_id")
-                
-                def is_present(st):
-                    return st and str(st.state).lower() not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]
-
-                new_p = is_present(new_s)
-                old_p = is_present(old_s)
-                
-                if new_p != old_p:
-                    self._tag_last_changed[eid] = dt_util.utcnow().isoformat()                    
-                    scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
-                    eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else max(300, GHOST_WINDOW_SECONDS)
-                    
-                    if not new_p: # Vertrek
-                        self._person_departure_time[eid] = dt_util.utcnow()
-                        
-                        async def verify_tag_departure(_):
-                            state_obj = self.hass.states.get(eid)
-                            is_still_present = False
-                            if state_obj:
-                                val = str(state_obj.state).lower()
-                                if val not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]:
-                                    if state_obj.last_updated:
-                                        if (dt_util.utcnow() - state_obj.last_updated).total_seconds() < 180:
-                                            is_still_present = True
-                                    else:
-                                        is_still_present = True
-                        
-                            if not is_still_present:
-                                _LOGGER.info(f"🚶‍♂️ Tag Vertrek geverifieerd voor '{eid}'.")
-                                await self.async_trigger_main_logic(event)
-                            else:
-                                _LOGGER.debug(f"👻 Tag Ghost Bounce geannuleerd voor '{eid}'.")
-                        from homeassistant.helpers.event import async_call_later
-                        self._listeners.append(async_call_later(self.hass, eff_ghost_window, verify_tag_departure))
-                    else: # Thuiskomst
-                        _LOGGER.info(f"🔑 Fysieke Tag gedetecteerd: '{eid}'. Trigger Hoofdlogica.")
-                        await asyncio.sleep(0.5)
-                        await self.async_trigger_main_logic(event)
-
-            _LOGGER.debug(f"Listener voor Fysieke Tags/Sensoren geregistreerd: {presence_sensors}")
-            self._listeners.append(async_track_state_change_event(self.hass, presence_sensors, async_handle_tag))            
-            
-            async def _monitor_stale_tags(_):
-                now = dt_util.utcnow()
-                for eid in presence_sensors:
-                    state_obj = self.hass.states.get(eid)
-                    if state_obj and eid.startswith("sensor."):
-                        val = str(state_obj.state).lower()
-                        is_present = val not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]
-                        if is_present:
-                            last_upd = state_obj.last_updated
-                            if last_upd and (now - last_upd).total_seconds() > 180: # 3 min geen hartslag
-                                if not self._person_departure_time.get(eid):
-                                    _LOGGER.info(f"📡 Tag {eid} is al 3 minuten stil. Start vertrek-procedure.")
-                                    class DummyState:
-                                        def __init__(self, s): self.state = s
-                                    class DummyEvent:
-                                        def __init__(self, e, ns, os): self.data = {"entity_id": e, "new_state": ns, "old_state": os}
-                                    await async_handle_tag(DummyEvent(eid, DummyState("unavailable"), DummyState(state_obj.state)))
-            self._listeners.append(async_track_time_interval(self.hass, _monitor_stale_tags, timedelta(minutes=1)))
             
         if wp_motion := self.options.get("wall_panel_motion_sensor"):
             triggers.append(wp_motion)
@@ -1139,44 +1071,6 @@ class AionLogicCoordinator:
                     "gps_accuracy": gps_acc,
                     "is_bounce": is_bounce,
                     "is_restart": is_recent_restart,
-                    "is_ghost_masked": is_ghost_masked
-                }
-
-        # Zero-Code Tags: Injecteer BTHome tags als pseudo-personen voor naadloze Cloud verwerking
-        for tag_id in self.options.get("presence_sensors", []):
-            state_obj = self.hass.states.get(tag_id)
-            if state_obj:
-                val = str(state_obj.state).lower()
-                is_home = val not in ["unavailable", "unknown", "off", "false", "idle", "not_home", "none", ""]
-                
-                # Tag Ghost Bounce Masking (Dynamisch)
-                scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
-                eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else max(300, GHOST_WINDOW_SECONDS)
-
-                # BTHome Stale Check (Forceer afwezig in payload als tag bevroren is)
-                if is_home and tag_id.startswith("sensor."):
-                    if state_obj.last_updated and (dt_util.utcnow() - state_obj.last_updated).total_seconds() > 180:
-                        is_home = False
-                
-                departed_at = self._person_departure_time.get(tag_id)
-                is_ghost_masked = False
-                if not is_home and departed_at:
-                    if (dt_util.utcnow() - departed_at).total_seconds() < (eff_ghost_window - 2):
-                        is_home = True
-                        is_ghost_masked = True
-
-                # Bepaal het échte moment van statuswijziging (Fluctuatie filter)
-                real_last_changed = self._tag_last_changed.get(tag_id)
-                if not real_last_changed:
-                    # Fallback bij startup/herladen: Voorkom false-positive 'recente thuiskomst'
-                    real_last_changed = self._startup_time.isoformat()
-                                                
-                persons_data[tag_id] = {
-                    "state": "home" if is_home else "not_home",
-                    "last_changed": real_last_changed,
-                    "gps_accuracy": 0.0,
-                    "is_bounce": False,
-                    "is_restart": False,
                     "is_ghost_masked": is_ghost_masked
                 }                
         
