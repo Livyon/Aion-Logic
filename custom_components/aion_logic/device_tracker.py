@@ -89,7 +89,7 @@ class AionTagTracker(TrackerEntity):
             return
             
         last_upd = state_obj.last_updated
-        if last_upd and (now - last_upd).total_seconds() >= 180:
+        if last_upd and (now - last_upd).total_seconds() >= 300:
             self._update_connection(False)
         else:
             self._update_connection(True)
