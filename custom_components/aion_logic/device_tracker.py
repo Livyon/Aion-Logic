@@ -58,21 +58,21 @@ class AionTagTracker(TrackerEntity):
         """Registreer listeners zodra de entiteit is toegevoegd aan HA."""
         self.async_on_remove(
             async_track_state_change_event(
-                self.hass, [self._source_entity_id], self._handle_sensor_state_change
+                self.hass, [self._source_entity_id], self._async_handle_sensor_state_change
             )
         )
         
         # Controleer elke 15 seconden actief op een 'bevroren' 180s status
         self.async_on_remove(
             async_track_time_interval(
-                self.hass, self._check_stale_state, timedelta(seconds=15)
+                self.hass, self._async_check_stale_state, timedelta(seconds=15)
             )
         )
         
         # Doe direct een eerste check bij het opstarten
-        self._check_stale_state(dt_util.utcnow())
+        await self._async_check_stale_state(dt_util.utcnow())
 
-    async def _handle_sensor_state_change(self, event):
+    async def _async_handle_sensor_state_change(self, event):
         """Wordt getriggerd bij ELKE wijziging van de tag (ook al is het ruis)."""
         new_state = event.data.get("new_state")
         if not new_state or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
@@ -81,7 +81,7 @@ class AionTagTracker(TrackerEntity):
             
         self._update_connection(True)
 
-    def _check_stale_state(self, now):
+    async def _async_check_stale_state(self, now):
         """Check of we de 180 seconden timeout hebben bereikt zonder updates."""
         state_obj = self.hass.states.get(self._source_entity_id)
         if not state_obj or state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
