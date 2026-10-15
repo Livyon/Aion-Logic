@@ -673,7 +673,14 @@ class AionLogicCoordinator:
             _LOGGER.info("🏖️ Gebruiker bevestigt Vakantiemodus via notificatie.")
             self._vacation_override = True
             await self.async_trigger_main_logic(event)
-            
+
+        elif action == "AION_DISABLE_NIGHT_ONLY":
+            _LOGGER.info("🛡️ Gebruiker schakelt Night-Only uit voor continue bewaking tijdens afwezigheid.")
+            new_options = {**self.entry.options}
+            new_options["guard_autonomous_night_only"] = False
+            self.hass.config_entries.async_update_entry(self.entry, options=new_options)
+            await self.async_trigger_main_logic(event)
+                    
         elif action == "AION_DISARM_SYSTEM":
             _LOGGER.info("🔓 Gebruiker schakelt alarm uit via ontwaak-notificatie.")
             entity_reg = async_get_entity_registry(self.hass)
@@ -986,6 +993,7 @@ class AionLogicCoordinator:
         config_data["safety"] = {
             "guard_mode": self.options.get(CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS),
             "alarm_panel_entity": self.options.get(CONF_ALARM_PANEL),
+            "guard_autonomous_night_only": self.options.get("guard_autonomous_night_only", False),
             "defense_lights": self.options.get(CONF_DEFENSE_LIGHTS, []),
             "defense_speakers": self.options.get(CONF_DEFENSE_SPEAKERS, []),
             "defense_sirens": self.options.get("defense_sirens", []),
