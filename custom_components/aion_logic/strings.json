@@ -161,6 +161,7 @@
                 "data": {
                     "enable_native_guard": "🛡️ Native Guard: Automatisch beveiligen bij afwezigheid (Gebruikt raamsensoren)",
                     "enable_native_night_guard": "🌙 Sleep Guard: Ramen beveiligen tijdens 'Nacht' scenario's (terwijl u slaapt)",
+                    "guard_autonomous_night_only": "🌙 Night-Only (Automatisch alarm negeert afwezigheid overdag)",
                     "enable_ghost_occupancy": "Vakantiesimulatie Activeren (Ghost Occupancy)",
                     "perimeter_sensors": "📹 Perimeter: Buitencamera's & Deurbellen (Pre-Warning)",
                     "perimeter_cooldown": "⏱️ Perimeter Cooldown: Pauze tussen meldingen (minuten)",                    
