@@ -2,7 +2,7 @@
 import logging
 from datetime import timedelta
 
-from homeassistant.components.device_tracker.config_entry import TrackerEntity
+from homeassistant.components.device_tracker import TrackerEntity
 from homeassistant.components.device_tracker.const import SourceType
 from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
