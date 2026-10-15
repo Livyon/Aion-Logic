@@ -152,6 +152,7 @@ def _get_safety_schema(options: dict, notify_services: list = None) -> vol.Schem
                 mode=selector.SelectSelectorMode.DROPDOWN
             )
         ),
+        vol.Optional("guard_autonomous_night_only", default=options.get("guard_autonomous_night_only", False)): selector.BooleanSelector(),
         vol.Optional("enable_ghost_occupancy", description="Vakantiesimulatie Activeren (Ghost Occupancy)", default=options.get("enable_ghost_occupancy", False)): selector.BooleanSelector(),      
         vol.Optional(CONF_PERIMETER_SENSORS, description="Buitencamera's & Deurbellen (Pre-Warning)", default=_get_list(options, CONF_PERIMETER_SENSORS)): selector.EntitySelector({"domain": ["binary_sensor", "sensor", "camera", "event"], "multiple": True}),
         vol.Optional(CONF_PERIMETER_COOLDOWN, description="Cooldown Perimeter (Minuten)", default=options.get(CONF_PERIMETER_COOLDOWN, 15)): selector.NumberSelector({"min": 0, "max": 60, "step": 1, "mode": "slider", "unit_of_measurement": "min"}),
