@@ -1578,13 +1578,18 @@ class AionLogicCoordinator:
             _LOGGER.error(f"Fout bij uitvoeren lokale nood-actie: {e}")
 
     async def async_trigger_main_logic(self, *args):
-        # --- 1. GLOBAL DEBOUNCE (1.5s) Tegen Flapping & Spam ---
-        self._debounce_counter = getattr(self, "_debounce_counter", 0) + 1
-        current_counter = self._debounce_counter
-        await asyncio.sleep(1.5)
-        if self._debounce_counter != current_counter:
-            _LOGGER.debug("🚦 Debounce: Event samengevoegd met nieuwere trigger (Flapping voorkomen).")
+        # --- 1. NON-STARVING DEBOUNCE (1.5s Window) ---
+        if getattr(self, "_debounce_timer_active", False):
+            self._debounce_last_args = args
+            _LOGGER.debug("🚦 Debounce: Event gebufferd tijdens actieve cooldown.")
             return
+            
+        self._debounce_timer_active = True
+        self._debounce_last_args = args
+        await asyncio.sleep(1.5)
+        
+        self._debounce_timer_active = False
+        args = self._debounce_last_args
       
         _LOGGER.debug(f"Aion Logic Hoofdlogica getriggerd door: {args}")
         trigger_entity_id = None
