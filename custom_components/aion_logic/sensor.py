@@ -301,14 +301,21 @@ class AionLogicGuardianSensor(SensorEntity):
             
             # Check Gasten
             if self._get_switch_state("guest_mode"): is_occupied = True
+            
+            current_scenario = str(self._scenario_sensor.native_value).lower()                
 
             if not is_occupied:
-                should_arm = True
-                mode_label = "Afwezig"
+                is_night_only = options.get("guard_autonomous_night_only", False)
+                is_day = "dag" in current_scenario or "voorverwarming" in current_scenario
+                
+                if is_night_only and is_day:
+                    self._set_state("Rust (Night-Only)", "safe", "Systeem waakt alleen 's nachts")
+                    return
+                else:
+                    should_arm = True
+                    mode_label = "Afwezig"
             else:
                 # --- GHOST GAP FIX v2 (Tijd-gebaseerd) ---
-                current_scenario = str(self._scenario_sensor.native_value).lower()
-
                 if "nacht" in current_scenario:
                     should_arm = True
                     mode_label = "Nacht"
