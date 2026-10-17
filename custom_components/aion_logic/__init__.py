@@ -360,9 +360,10 @@ class AionLogicCoordinator:
         eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else max(300, GHOST_WINDOW_SECONDS)
 
         
-        if old_state and old_state.state != new_state.state:
+        state_changed = (old_state is None) or (old_state.state != new_state.state)
+        if state_changed:
             # --- Ghost Bounce Tracker ---
-            if new_state.state != "home" and old_state.state == "home":
+            if old_state and new_state.state != "home" and old_state.state == "home":
                 
                 self._person_departure_time[entity_id] = dt_util.utcnow()
 
@@ -1577,6 +1578,14 @@ class AionLogicCoordinator:
             _LOGGER.error(f"Fout bij uitvoeren lokale nood-actie: {e}")
 
     async def async_trigger_main_logic(self, *args):
+        # --- 1. GLOBAL DEBOUNCE (1.5s) Tegen Flapping & Spam ---
+        self._debounce_counter = getattr(self, "_debounce_counter", 0) + 1
+        current_counter = self._debounce_counter
+        await asyncio.sleep(1.5)
+        if self._debounce_counter != current_counter:
+            _LOGGER.debug("🚦 Debounce: Event samengevoegd met nieuwere trigger (Flapping voorkomen).")
+            return
+      
         _LOGGER.debug(f"Aion Logic Hoofdlogica getriggerd door: {args}")
         trigger_entity_id = None
         event = None
@@ -1821,9 +1830,21 @@ class AionLogicCoordinator:
                     self.hass.bus.async_fire("aion_logic_scenario_update", {"scenario": scenario})
                     _LOGGER.info(f"🎯 Aion Logic: {scenario} | Acties: {executed}")
 
-        except (ApiAuthError, ApiConnectionError, ApiTimeoutError):
+        except (ApiAuthError, ApiConnectionError, ApiTimeoutError) as e:
             self._fail_count += 1
-            if self._fail_count >= self._fail_threshold: await self._activate_emergency_fallback()
+            _LOGGER.warning(f"⚠️ Netwerk/Cloud fout ({e}). Fail count: {self._fail_count}")
+            if self._fail_count >= self._fail_threshold: 
+                await self._activate_emergency_fallback()
+            else:
+                # --- 2. AUTO-RETRY BIJ TRANSIENTE FOUTEN (Error 14) ---
+                if not getattr(self, "_is_retrying_network", False):
+                    _LOGGER.info("🔄 Transiente netwerkfout gedetecteerd. Automatische retry over 5 seconden...")
+                    self._is_retrying_network = True
+                    async def _network_retry(_):
+                        self._is_retrying_network = False
+                        await self.async_trigger_main_logic(*args)
+                    from homeassistant.helpers.event import async_call_later
+                    async_call_later(self.hass, 5, _network_retry)
         except Exception as e:
             _LOGGER.exception(f"Onverwachte fout: {e}")
         finally:
