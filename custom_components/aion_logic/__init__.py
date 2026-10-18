@@ -1405,7 +1405,13 @@ class AionLogicCoordinator:
                     unique_id = f"{self.entry.entry_id}_{internal_target}"
                     entity_id = self._entity_registry.async_get_entity_id("switch", DOMAIN, unique_id)
                     if entity_id:
-                        await self.hass.services.async_call(domain, service_name, {"entity_id": entity_id}, blocking=True)
+                        try:
+                            await asyncio.wait_for(
+                                self.hass.services.async_call(domain, service_name, {"entity_id": entity_id}, blocking=True),
+                                timeout=2.0
+                            )
+                        except asyncio.TimeoutError:
+                            _LOGGER.warning(f"Timeout bij interne switch actie: '{entity_id}'")
                         executed_count += 1
                     continue
 
@@ -1502,7 +1508,7 @@ class AionLogicCoordinator:
                                     try:
                                         await asyncio.wait_for(
                                             self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=True),
-                                            timeout=5.0
+                                            timeout=2.0
                                         )
                                     except asyncio.TimeoutError:
                                         _LOGGER.warning(f"Timeout bij kritieke actie op '{ent_id}' ({exec_domain}.{exec_service}). Lock veiliggesteld.")
@@ -1512,7 +1518,7 @@ class AionLogicCoordinator:
                             
                             executed_count += 1
                             if is_critical:
-                                await asyncio.sleep(0.8)
+                                await asyncio.sleep(0.5)
                         except Exception as e:
                             if exec_domain == "media_player" and exec_service in ["repeat_set", "media_stop", "media_pause", "turn_off"]:
                                 _LOGGER.debug(f"🔉 Media actie '{exec_service}' op '{ent_id}' zacht genegeerd (Hardware limiet): {e}")
@@ -1665,7 +1671,8 @@ class AionLogicCoordinator:
                         return         
 
         wait_cycles = 0
-        max_cycles = 40 if (trigger_entity_id and trigger_entity_id.startswith("person.")) else 20
+        is_presence = trigger_entity_id and (trigger_entity_id.startswith("person.") or trigger_entity_id.startswith("device_tracker."))
+        max_cycles = 120 if is_presence else 20
         while self._is_running and wait_cycles < max_cycles:
             await asyncio.sleep(0.5)
             wait_cycles += 1
