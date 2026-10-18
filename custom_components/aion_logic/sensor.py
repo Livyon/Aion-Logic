@@ -306,8 +306,15 @@ class AionLogicGuardianSensor(SensorEntity):
 
             if not is_occupied:
                 is_night_only = options.get("guard_autonomous_night_only", False)
-                is_day = "dag" in current_scenario or "voorverwarming" in current_scenario
-                
+
+                sun_state = self.hass.states.get("sun.sun")
+                sun_elev = 0.0
+                if sun_state:
+                    try: sun_elev = float(sun_state.attributes.get("elevation", 0.0))
+                    except (ValueError, TypeError): pass
+                is_dark = (sun_state and sun_state.state == "below_horizon") or (sun_elev < 4.0)
+                is_day = not is_dark
+                                
                 if is_night_only and is_day:
                     self._set_state("Rust (Night-Only)", "safe", "Systeem waakt alleen 's nachts")
                     return
