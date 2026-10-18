@@ -62,10 +62,10 @@ class AionTagTracker(TrackerEntity):
             )
         )
         
-        # Controleer elke 15 seconden actief op een 'bevroren' 180s status
+        # Controleer elke 10 seconden actief op een 'bevroren' status
         self.async_on_remove(
             async_track_time_interval(
-                self.hass, self._async_check_stale_state, timedelta(seconds=15)
+                self.hass, self._async_check_stale_state, timedelta(seconds=10)
             )
         )
         
@@ -82,14 +82,14 @@ class AionTagTracker(TrackerEntity):
         self._update_connection(True)
 
     async def _async_check_stale_state(self, now):
-        """Check of we de 180 seconden timeout hebben bereikt zonder updates."""
+        """Check of we de 45 seconden timeout hebben bereikt zonder updates (Ultra-fast BLE)."""
         state_obj = self.hass.states.get(self._source_entity_id)
         if not state_obj or state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             self._update_connection(False)
             return
             
         last_upd = state_obj.last_updated
-        if last_upd and (now - last_upd).total_seconds() >= 300:
+        if last_upd and (now - last_upd).total_seconds() >= 45:
             self._update_connection(False)
         else:
             self._update_connection(True)
