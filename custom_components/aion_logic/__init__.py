@@ -1623,8 +1623,10 @@ class AionLogicCoordinator:
             if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
                 if not persons_home and self.options.get("guard_autonomous_night_only", False):
                     sun_state = self._get_state("sun.sun")
-                    try: sun_elev = float(self._get_state_attr("sun.sun", "elevation", 0) or 0)
-                    except: sun_elev = 0.0
+                    try: 
+                        sun_elev = float(self._get_state_attr("sun.sun", "elevation", 0) or 0)
+                    except: 
+                        sun_elev = 0.0
                     is_dark = (sun_state == "below_horizon") or (sun_elev < 4.0)
                     is_armed = is_dark
                 else:
@@ -1709,8 +1711,10 @@ class AionLogicCoordinator:
                     if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
                     if not persons_home and self.options.get("guard_autonomous_night_only", False):
                         sun_state = self._get_state("sun.sun")
-                        try: sun_elev = float(self._get_state_attr("sun.sun", "elevation", 0) or 0)
-                        except: sun_elev = 0.0
+                        try: 
+                            sun_elev = float(self._get_state_attr("sun.sun", "elevation", 0) or 0)
+                        except: 
+                            sun_elev = 0.0
                         is_dark = (sun_state == "below_horizon") or (sun_elev < 4.0)
                         is_armed = is_dark
                     else:
