@@ -1621,7 +1621,14 @@ class AionLogicCoordinator:
             persons_home = any(self._get_state(p) == "home" for p in self.options.get("person_entities", []))
             scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
             if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
-                is_armed = True
+                if not persons_home and self.options.get("guard_autonomous_night_only", False):
+                    sun_state = self._get_state("sun.sun")
+                    try: sun_elev = float(self._get_state_attr("sun.sun", "elevation", 0) or 0)
+                    except: sun_elev = 0.0
+                    is_dark = (sun_state == "below_horizon") or (sun_elev < 4.0)
+                    is_armed = is_dark
+                else:
+                    is_armed = True
         
         # 2. Bepaal sensor type
         is_window_trigger = False
@@ -1700,6 +1707,13 @@ class AionLogicCoordinator:
                     persons_home = any(self._get_state(p) == "home" for p in self.options.get("person_entities", []))
                     scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
                     if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
+                    if not persons_home and self.options.get("guard_autonomous_night_only", False):
+                        sun_state = self._get_state("sun.sun")
+                        try: sun_elev = float(self._get_state_attr("sun.sun", "elevation", 0) or 0)
+                        except: sun_elev = 0.0
+                        is_dark = (sun_state == "below_horizon") or (sun_elev < 4.0)
+                        is_armed = is_dark
+                    else:
                         is_armed = True
 
                 if is_armed:
