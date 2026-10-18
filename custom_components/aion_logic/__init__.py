@@ -1498,7 +1498,16 @@ class AionLogicCoordinator:
                                 except asyncio.TimeoutError:
                                     _LOGGER.debug(f"🔉 Media actie timeout op '{ent_id}' (Speaker offline?)")
                             else:
-                                await self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=is_critical)
+                                if is_critical:
+                                    try:
+                                        await asyncio.wait_for(
+                                            self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=True),
+                                            timeout=5.0
+                                        )
+                                    except asyncio.TimeoutError:
+                                        _LOGGER.warning(f"Timeout bij kritieke actie op '{ent_id}' ({exec_domain}.{exec_service}). Lock veiliggesteld.")
+                                else:
+                                    await self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=False)
                             # --- EINDE MEDIA BLOCKING PATCH ---
                             
                             executed_count += 1
@@ -1578,18 +1587,13 @@ class AionLogicCoordinator:
             _LOGGER.error(f"Fout bij uitvoeren lokale nood-actie: {e}")
 
     async def async_trigger_main_logic(self, *args):
-        # --- 1. NON-STARVING DEBOUNCE (1.5s Window) ---
-        if getattr(self, "_debounce_timer_active", False):
-            self._debounce_last_args = args
-            _LOGGER.debug("🚦 Debounce: Event gebufferd tijdens actieve cooldown.")
-            return
-            
-        self._debounce_timer_active = True
-        self._debounce_last_args = args
+        # --- 1. GLOBAL DEBOUNCE (1.5s) Tegen Flapping & Spam ---
+        self._debounce_counter = getattr(self, "_debounce_counter", 0) + 1
+        current_counter = self._debounce_counter
         await asyncio.sleep(1.5)
-        
-        self._debounce_timer_active = False
-        args = self._debounce_last_args
+        if self._debounce_counter != current_counter:
+            _LOGGER.debug("🚦 Debounce: Event samengevoegd met nieuwere trigger (Flapping voorkomen).")
+            return
       
         _LOGGER.debug(f"Aion Logic Hoofdlogica getriggerd door: {args}")
         trigger_entity_id = None
@@ -1661,12 +1665,13 @@ class AionLogicCoordinator:
                         return         
 
         wait_cycles = 0
-        while self._is_running and wait_cycles < 20: # Maximaal 10 seconden in de wachtrij
+        max_cycles = 40 if (trigger_entity_id and trigger_entity_id.startswith("person.")) else 20
+        while self._is_running and wait_cycles < max_cycles:
             await asyncio.sleep(0.5)
             wait_cycles += 1
             
         if self._is_running: 
-            _LOGGER.warning("Aion Logic Cloud is te druk. Event overgeslagen om filevorming te voorkomen.")
+            _LOGGER.warning(f"Aion Logic Cloud is te druk. Event ({trigger_entity_id}) overgeslagen om filevorming te voorkomen.")
             return
 
         self._is_running = True
