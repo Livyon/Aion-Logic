@@ -1491,29 +1491,13 @@ class AionLogicCoordinator:
 
                     if should_act:
                         try:
-                            is_critical = exec_domain in ["climate", "mypyllant"]
+                            is_critical = False # PRIO: Fire-and-forget om loop filevorming definitief te voorkomen
                             
                             # --- START MEDIA BLOCKING PATCH (Vangt ServiceNotSupported netjes af) ---
                             if exec_domain == "media_player":
-                                try:
-                                    # blocking=True haalt de error naar onze try/except, timeout voorkomt vertraging
-                                    await asyncio.wait_for(
-                                        self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=True),
-                                        timeout=2.0
-                                    )
-                                except asyncio.TimeoutError:
-                                    _LOGGER.debug(f"🔉 Media actie timeout op '{ent_id}' (Speaker offline?)")
+                                await self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=False)
                             else:
-                                if is_critical:
-                                    try:
-                                        await asyncio.wait_for(
-                                            self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=True),
-                                            timeout=2.0
-                                        )
-                                    except asyncio.TimeoutError:
-                                        _LOGGER.warning(f"Timeout bij kritieke actie op '{ent_id}' ({exec_domain}.{exec_service}). Lock veiliggesteld.")
-                                else:
-                                    await self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=False)
+                                await self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=False)
                             # --- EINDE MEDIA BLOCKING PATCH ---
                             
                             executed_count += 1
@@ -1592,15 +1576,7 @@ class AionLogicCoordinator:
         except Exception as e:
             _LOGGER.error(f"Fout bij uitvoeren lokale nood-actie: {e}")
 
-    async def async_trigger_main_logic(self, *args):
-        # --- 1. GLOBAL DEBOUNCE (1.5s) Tegen Flapping & Spam ---
-        self._debounce_counter = getattr(self, "_debounce_counter", 0) + 1
-        current_counter = self._debounce_counter
-        await asyncio.sleep(1.5)
-        if self._debounce_counter != current_counter:
-            _LOGGER.debug("🚦 Debounce: Event samengevoegd met nieuwere trigger (Flapping voorkomen).")
-            return
-      
+    async def async_trigger_main_logic(self, *args):      
         _LOGGER.debug(f"Aion Logic Hoofdlogica getriggerd door: {args}")
         trigger_entity_id = None
         event = None
@@ -1609,6 +1585,18 @@ class AionLogicCoordinator:
             event = args[0]
             trigger_entity_id = event.data.get("entity_id")
             new_state_obj = event.data.get("new_state")
+            
+        # --- 1. PRIORITY FAST-TRACK & DEBOUNCE ---
+        is_presence_trigger = trigger_entity_id and (trigger_entity_id.startswith("person.") or trigger_entity_id.startswith("device_tracker."))
+        if is_presence_trigger:
+            _LOGGER.debug(f"🏃 PRIORITY 1: Thuiskomst ({trigger_entity_id}) passeert de debounce!")
+        else:
+            self._debounce_counter = getattr(self, "_debounce_counter", 0) + 1
+            current_counter = self._debounce_counter
+            await asyncio.sleep(1.5)
+            if self._debounce_counter != current_counter:
+                _LOGGER.debug("🚦 Debounce: Event samengevoegd met nieuwere trigger (Flapping voorkomen).")
+                return            
 
         trigger_memory_state = new_state_obj.state if new_state_obj else "unknown"
         
@@ -1668,8 +1656,6 @@ class AionLogicCoordinator:
                         await asyncio.sleep(45)
                     else:
                         _LOGGER.warning(f"🚨 Onmiddellijk alarm: Deur/raam '{trigger_entity_id}' geopend buiten Inloopzone!")
-                else:
-                    await asyncio.sleep(45)
 
                 current_state = self._get_state(trigger_entity_id)
                 
