@@ -365,6 +365,22 @@ class AionLogicCoordinator:
             # --- Ghost Bounce Tracker ---
             if old_state and new_state.state != "home" and old_state.state == "home":
                 
+                # --- ⚓ ANCHOR GUARD: Blokkeer valse GPS hops als Wi-Fi of BLE Tag nog thuis is ---
+                is_anchored = False
+                
+                # 1. Check BLE Tags (presence_sensors)
+                for tag in self.options.get("presence_sensors", []):
+                    if self._get_state(tag) in ["home", "on", "connected"]: is_anchored = True
+                    
+                # 2. Check Wi-Fi (wifi_tracker_sensors)
+                for wifi in self.options.get("wifi_tracker_sensors", []):
+                    if self._get_state(wifi) in ["home", "on", "connected"]: is_anchored = True
+                    
+                if is_anchored:
+                    _LOGGER.info(f"⚓ Anchor Guard: GPS vertrek van '{entity_id}' keihard geblokkeerd. Wi-Fi of BLE Tag is nog thuis!")
+                    return # Aborteer het vertrek volledig, huis blijft veilig op Thuis.
+                # ---------------------------------------------------------------------------------                
+                
                 self._person_departure_time[entity_id] = dt_util.utcnow()
 
                 # Check of dit een wazige GPS uitschieter is (bijv. Cell Tower > 80m)
@@ -1491,14 +1507,15 @@ class AionLogicCoordinator:
 
                     if should_act:
                         try:
-                            is_critical = False # PRIO: Fire-and-forget om loop filevorming definitief te voorkomen
+                            # PRIO: Fire-and-forget om de loop vrij te houden, MAAR met rate-limit voor thermostaten
+                            is_climate_api = exec_domain in ["climate", "mypyllant", "water_heater"]
                             
-                            # --- START MEDIA BLOCKING PATCH (Vangt ServiceNotSupported netjes af) ---
                             if exec_domain == "media_player":
                                 await self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=False)
                             else:
                                 await self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=False)
-                            # --- EINDE MEDIA BLOCKING PATCH ---
+                                if is_climate_api:
+                                    await asyncio.sleep(0.5) # ⏱️ API Rate Limiter: Voorkomt Vaillant 403 Quota Exceeded                                
                             
                             executed_count += 1
                             if is_critical:
