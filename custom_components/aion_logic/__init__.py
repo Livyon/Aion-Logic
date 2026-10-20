@@ -367,21 +367,28 @@ class AionLogicCoordinator:
                 
                 # --- ⚓ ANCHOR GUARD: Blokkeer valse GPS hops als Wi-Fi of BLE Tag nog thuis is ---
                 is_anchored = False
+                anchor_source = "Onbekend"
                 
                 # 1. Check BLE Tags (presence_sensors)
                 for tag in self.options.get("presence_sensors", []):
-                    if self._get_state(tag) in ["home", "on", "connected"]: is_anchored = True
+                    if self._get_state(tag) in ["home", "on", "connected"]: 
+                        is_anchored = True
+                        anchor_source = f"BLE Tag ({tag})"
                     
                 # 2. Check Wi-Fi (wifi_tracker_sensors)
                 for wifi in self.options.get("wifi_tracker_sensors", []):
                     w_state = self._get_state(wifi)
                     if w_state:
                         w_str = str(w_state).lower()
-                        if w_str in ["home", "on", "connected"]: is_anchored = True
-                        elif w_str not in ["not_home", "off", "disconnected", "<not connected>", "unavailable", "unknown", "none", ""]: is_anchored = True
+                        if w_str in ["home", "on", "connected"]: 
+                            is_anchored = True
+                            anchor_source = f"Wi-Fi ({wifi})"
+                        elif w_str not in ["not_home", "off", "disconnected", "<not connected>", "unavailable", "unknown", "none", ""]: 
+                            is_anchored = True
+                            anchor_source = f"Wi-Fi netwerk '{w_state}'"
                     
                 if is_anchored:
-                    _LOGGER.info(f"⚓ Anchor Guard: GPS vertrek van '{entity_id}' keihard geblokkeerd. Wi-Fi of BLE Tag is nog thuis!")
+                    _LOGGER.info(f"⚓ Anchor Guard: GPS vertrek van '{entity_id}' keihard geblokkeerd. {anchor_source} is nog thuis!")
                     return # Aborteer het vertrek volledig, huis blijft veilig op Thuis.
                 # ---------------------------------------------------------------------------------                
                 
