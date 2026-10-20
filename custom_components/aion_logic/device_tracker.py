@@ -98,4 +98,6 @@ class AionTagTracker(TrackerEntity):
         """Update de interne status en push naar Home Assistant."""
         if self._is_connected != is_connected:
             self._is_connected = is_connected
+            status_text = "THUIS (Verbonden)" if is_connected else "AFWEZIG (Verbroken)"
+            _LOGGER.info(f"🏷️ BLE Tag '{self._attr_name}' ({self._source_entity_id}) status is nu: {status_text}")            
             self.async_write_ha_state()
