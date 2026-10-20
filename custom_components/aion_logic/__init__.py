@@ -1373,6 +1373,14 @@ class AionLogicCoordinator:
     async def _execute_actions(self, actions: list, climate_zones_payload: dict):
         """Voert de acties uit (Clean Architecture v2.3.7)."""
         _LOGGER.debug(f"Uitvoeren van {len(actions)} acties ontvangen van Aion Logic API...")
+        
+        def _sort_actions(act):
+            svc = act.get("service", "")
+            if isinstance(svc, str) and svc.startswith(("climate.", "mypyllant.", "water_heater.")): 
+                return 1
+            return 0
+        actions = sorted(actions, key=_sort_actions)
+
         executed_count = 0
         
         for action in actions:
@@ -1496,6 +1504,11 @@ class AionLogicCoordinator:
                     if state_obj:
                         if exec_service == "set_hvac_mode" and exec_data.get("hvac_mode") == state_obj.state:
                             should_act = False
+                        elif exec_service in ["set_manual_mode_setpoint", "set_temperature"]:
+                            cur_t = state_obj.attributes.get("temperature")
+                            tgt_t = exec_data.get("temperature")
+                            if cur_t is not None and tgt_t is not None and float(cur_t) == float(tgt_t):
+                                should_act = False                            
                         elif exec_service in ["turn_on", "turn_off"]:
                             tgt_state = "on" if exec_service == "turn_on" else "off"
                             if state_obj.state == tgt_state: should_act = False
@@ -1517,7 +1530,7 @@ class AionLogicCoordinator:
                             
                             executed_count += 1
                             if is_critical:
-                                await asyncio.sleep(0.5) # ⏱️ API Rate Limiter: Voorkomt Vaillant 403 Quota Exceeded
+                                await asyncio.sleep(3.0) # ⏱️ API Rate Limiter: 3.0s tegen Vaillant 429 Too Many Requests
                         except Exception as e:
                             if exec_domain == "media_player" and exec_service in ["repeat_set", "media_stop", "media_pause", "turn_off"]:
                                 _LOGGER.debug(f"🔉 Media actie '{exec_service}' op '{ent_id}' zacht genegeerd (Hardware limiet): {e}")
