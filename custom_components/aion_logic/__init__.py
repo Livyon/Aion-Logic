@@ -1508,18 +1508,16 @@ class AionLogicCoordinator:
                     if should_act:
                         try:
                             # PRIO: Fire-and-forget om de loop vrij te houden, MAAR met rate-limit voor thermostaten
-                            is_climate_api = exec_domain in ["climate", "mypyllant", "water_heater"]
+                            is_critical = exec_domain in ["climate", "mypyllant", "water_heater"]
                             
                             if exec_domain == "media_player":
                                 await self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=False)
                             else:
-                                await self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=False)
-                                if is_climate_api:
-                                    await asyncio.sleep(0.5) # ⏱️ API Rate Limiter: Voorkomt Vaillant 403 Quota Exceeded                                
+                                await self.hass.services.async_call(exec_domain, exec_service, exec_data, blocking=False)                               
                             
                             executed_count += 1
                             if is_critical:
-                                await asyncio.sleep(0.5)
+                                await asyncio.sleep(0.5) # ⏱️ API Rate Limiter: Voorkomt Vaillant 403 Quota Exceeded
                         except Exception as e:
                             if exec_domain == "media_player" and exec_service in ["repeat_set", "media_stop", "media_pause", "turn_off"]:
                                 _LOGGER.debug(f"🔉 Media actie '{exec_service}' op '{ent_id}' zacht genegeerd (Hardware limiet): {e}")
