@@ -1305,7 +1305,23 @@ class AionLogicCoordinator:
         if wp_doorbell := self.options.get("wall_panel_doorbell_sensor"):
              payload["sensors"][wp_doorbell] = self._get_state(wp_doorbell)
         if perim_list := config_data["safety"].get(CONF_PERIMETER_SENSORS, []):
-            for e_id in perim_list: payload["sensors"][e_id] = self._get_state(e_id)            
+            for e_id in perim_list: payload["sensors"][e_id] = self._get_state(e_id)
+
+        # --- LOW BATTERY INJECTIE (Alleen op heartbeat) ---
+        if not trigger_entity_id:
+            low_bats = []
+            for state in self.hass.states.async_all():
+                if state.attributes.get("device_class") == "battery":
+                    if state.domain == "sensor":
+                        try:
+                            if float(state.state) < 30.0:
+                                low_bats.append(state.name)
+                        except ValueError:
+                            pass
+                    elif state.domain == "binary_sensor" and state.state == "on":
+                        low_bats.append(state.name)
+            payload["sensors"]["low_batteries"] = low_bats
+                
         for zone_data in self.options.values():
             if isinstance(zone_data, dict) and "window_sensors" in zone_data:
                 for w in zone_data["window_sensors"]: payload["sensors"][w] = self._get_state(w)
