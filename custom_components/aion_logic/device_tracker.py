@@ -71,11 +71,22 @@ class AionTagTracker(TrackerEntity):
         
         # Doe direct een eerste check bij het opstarten
         await self._async_check_stale_state(dt_util.utcnow())
-
+        
+    def _is_valid_presence(self, state_str):
+        """Domme Edge filter: blokkeert zwakke RSSI signalen en expliciete uit-statussen."""
+        if state_str in (STATE_UNAVAILABLE, STATE_UNKNOWN, "off", "false", "not_home"):
+            return False
+        try:
+            if float(state_str) < -85.0:
+                return False
+        except ValueError:
+            pass
+        return True
+        
     async def _async_handle_sensor_state_change(self, event):
         """Wordt getriggerd bij ELKE wijziging van de tag (ook al is het ruis)."""
         new_state = event.data.get("new_state")
-        if not new_state or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+        if not new_state or not self._is_valid_presence(new_state.state):
             self._update_connection(False)
             return
             
@@ -84,7 +95,7 @@ class AionTagTracker(TrackerEntity):
     async def _async_check_stale_state(self, now):
         """Check of we de 45 seconden timeout hebben bereikt zonder updates (Ultra-fast BLE)."""
         state_obj = self.hass.states.get(self._source_entity_id)
-        if not state_obj or state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+        if not state_obj or not self._is_valid_presence(state_obj.state):
             self._update_connection(False)
             return
             
