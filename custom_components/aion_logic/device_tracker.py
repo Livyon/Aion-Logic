@@ -35,6 +35,7 @@ class AionTagTracker(TrackerEntity):
         self._source_entity_id = source_entity_id
         self._is_connected = False
         self._attr_unique_id = f"{entry_id}_{source_entity_id}_tracker"
+        self._last_strong_signal = None
         
         clean_name = source_entity_id.split('.')[-1].replace('_', ' ').title()
         self._attr_name = f"Aion {clean_name}"
@@ -86,24 +87,32 @@ class AionTagTracker(TrackerEntity):
     async def _async_handle_sensor_state_change(self, event):
         """Wordt getriggerd bij ELKE wijziging van de tag (ook al is het ruis)."""
         new_state = event.data.get("new_state")
-        if not new_state or not self._is_valid_presence(new_state.state):
+        
+        # 1. Harde uitschakeling (geen 45s wachten)
+        if not new_state or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN, "off", "false", "not_home"):
             self._update_connection(False)
             return
+
+        # 2. Zwak signaal? Negeren (Laat de stale timer zijn werk doen)
+        if not self._is_valid_presence(new_state.state):
+            return
             
+        # 3. Sterk signaal? Update geheugen en zet AAN
+        self._last_strong_signal = dt_util.utcnow()
         self._update_connection(True)
 
     async def _async_check_stale_state(self, now):
-        """Check of we de 45 seconden timeout hebben bereikt zonder updates (Ultra-fast BLE)."""
+        """Check of we de 45 seconden timeout hebben bereikt zonder STERKE updates."""
         state_obj = self.hass.states.get(self._source_entity_id)
-        if not state_obj or not self._is_valid_presence(state_obj.state):
+        
+        if not state_obj or state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN, "off", "false", "not_home"):
             self._update_connection(False)
             return
             
-        last_upd = state_obj.last_updated
-        if last_upd and (now - last_upd).total_seconds() >= 45:
-            self._update_connection(False)
-        else:
+        if self._last_strong_signal and (now - self._last_strong_signal).total_seconds() < 45:
             self._update_connection(True)
+        else:
+            self._update_connection(False)
 
     def _update_connection(self, is_connected):
         """Update de interne status en push naar Home Assistant."""
