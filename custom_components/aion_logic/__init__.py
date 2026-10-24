@@ -554,14 +554,6 @@ class AionLogicCoordinator:
             else:
                 _LOGGER.debug(f"🏃‍♂️ Beweging in {target_zone_id} ({entity_id}). Timer gepauzeerd (Auto-AAN is uitgeschakeld).")
 
-            guard_mode = self.options.get(CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS)
-            if guard_mode != GUARD_MODE_DISABLED:
-                now = dt_util.utcnow()
-                last_cloud = self._perimeter_timers.get(f"cloud_{entity_id}")
-                if not last_cloud or (now - last_cloud).total_seconds() > 60:
-                    self._perimeter_timers[f"cloud_{entity_id}"] = now
-                    self.hass.async_create_task(self.async_trigger_main_logic(event))                
-
             if is_event:
                 delay_minutes = int(zone_config.get("motion_timer", 2))
                 _LOGGER.debug(f"⏳ Event trigger {entity_id}. Auto-Off timer direct gestart ({delay_minutes} min).")
@@ -716,14 +708,6 @@ class AionLogicCoordinator:
             new_options["guard_autonomous_night_only"] = False
             self.hass.config_entries.async_update_entry(self.entry, options=new_options)
             await self.async_trigger_main_logic(event)
-            
-        elif action == "AION_ESCALATE_ALARM":
-            _LOGGER.warning("🚨 ALARM ESCALATIE: Gebruiker activeert sirenes vanuit Stil Alarm.")
-            await self._trigger_local_emergency("intrusion")
-            # Forceer de Cloud naar een Vol Alarm status
-            class DummyEvent:
-                def __init__(self): self.data = {"entity_id": "escalation_trigger", "new_state": type("DummyState", (), {"state": "on"})()}
-            await self.async_trigger_main_logic(DummyEvent())            
                     
         elif action == "AION_DISARM_SYSTEM":
             _LOGGER.info("🔓 Gebruiker schakelt alarm uit via ontwaak-notificatie.")
@@ -833,18 +817,14 @@ class AionLogicCoordinator:
         
         if e := self.options.get("wifi_tracker_sensors"): triggers.extend(e)
             
+        if wp_motion := self.options.get("wall_panel_motion_sensor"):
+            triggers.append(wp_motion)
+            
         if wp_doorbell := self.options.get("wall_panel_doorbell_sensor"):
             triggers.append(wp_doorbell)            
             
         if triggers:
             self._listeners.append(async_track_state_change_event(self.hass, triggers, self.async_trigger_main_logic))
-
-        if wp_motion := self.options.get("wall_panel_motion_sensor"):
-            async def async_handle_wp_motion(event):
-                new_state = event.data.get("new_state")
-                if new_state and new_state.state in ["on", "detected", "true"]:
-                    await self.async_trigger_main_logic(event)
-            self._listeners.append(async_track_state_change_event(self.hass, [wp_motion], async_handle_wp_motion))            
 
         # Dynamic Window Sensors
         window_sensors = []
@@ -1072,8 +1052,7 @@ class AionLogicCoordinator:
         }
 
         for key in self.options:
-            if key.startswith("sp_") or key.startswith("wall_panel_") or key.startswith("time_") or key.startswith("tijd_"): 
-                config_data[key] = self.options[key]
+            if key.startswith("sp_") or key.startswith("wall_panel_"): config_data[key] = self.options[key]
 
         nu = dt_util.now()
 
@@ -1266,9 +1245,7 @@ class AionLogicCoordinator:
                     "schedule": value.get("schedule", {}),
                     "enable_boost": value.get("enable_boost", True),
                     "is_reference": value.get("is_reference", False),
-                    "_all_climate_entities": value.get("climate_entities", []),
-                    "time_day": value.get("time_day") or value.get("tijd_dag"),
-                    "time_night": value.get("time_night") or value.get("tijd_nacht")
+                    "_all_climate_entities": value.get("climate_entities", [])
                 }
 
         raw_speakers = self.options.get(CONF_DEFENSE_SPEAKERS, [])
