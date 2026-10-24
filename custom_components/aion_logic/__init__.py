@@ -1072,7 +1072,8 @@ class AionLogicCoordinator:
         }
 
         for key in self.options:
-            if key.startswith("sp_") or key.startswith("wall_panel_"): config_data[key] = self.options[key]
+            if key.startswith("sp_") or key.startswith("wall_panel_") or key.startswith("time_") or key.startswith("tijd_"): 
+                config_data[key] = self.options[key]
 
         nu = dt_util.now()
 
