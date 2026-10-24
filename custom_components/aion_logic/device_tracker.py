@@ -35,7 +35,6 @@ class AionTagTracker(TrackerEntity):
         self._source_entity_id = source_entity_id
         self._is_connected = False
         self._attr_unique_id = f"{entry_id}_{source_entity_id}_tracker"
-        self._last_strong_signal = None
         
         clean_name = source_entity_id.split('.')[-1].replace('_', ' ').title()
         self._attr_name = f"Aion {clean_name}"
@@ -72,50 +71,28 @@ class AionTagTracker(TrackerEntity):
         
         # Doe direct een eerste check bij het opstarten
         await self._async_check_stale_state(dt_util.utcnow())
-        
-    def _is_valid_presence(self, state_str):
-        """Domme Edge filter: blokkeert zwakke RSSI signalen en expliciete uit-statussen."""
-        if state_str in (STATE_UNAVAILABLE, STATE_UNKNOWN, "off", "false", "not_home"):
-            return False
-        try:
-            if float(state_str) < -85.0:
-                return False
-        except ValueError:
-            pass
-        return True
-        
+
     async def _async_handle_sensor_state_change(self, event):
         """Wordt getriggerd bij ELKE wijziging van de tag (ook al is het ruis)."""
         new_state = event.data.get("new_state")
-        
-        if not new_state:
-            return
-            
-        # 1. Harde uitschakeling ALLEEN bij expliciete UIT-status. 
-        if new_state.state in ("off", "false", "not_home"):
+        if not new_state or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             self._update_connection(False)
             return
-
-        # 2. Zwak signaal of even Unavailable? Negeren (Laat de 45s stale timer zijn werk doen)
-        if new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN) or not self._is_valid_presence(new_state.state):
-            return
             
-        # 3. Sterk signaal? Update geheugen en zet AAN
-        self._last_strong_signal = dt_util.utcnow()
         self._update_connection(True)
 
     async def _async_check_stale_state(self, now):
-        """Check of we de 45 seconden timeout hebben bereikt zonder STERKE updates."""
+        """Check of we de 45 seconden timeout hebben bereikt zonder updates (Ultra-fast BLE)."""
         state_obj = self.hass.states.get(self._source_entity_id)
-        
-        if state_obj and state_obj.state in ("off", "false", "not_home"):
+        if not state_obj or state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             self._update_connection(False)
             return
             
-        if self._last_strong_signal and (now - self._last_strong_signal).total_seconds() < 45:
-            self._update_connection(True)
-        else:
+        last_upd = state_obj.last_updated
+        if last_upd and (now - last_upd).total_seconds() >= 45:
             self._update_connection(False)
+        else:
+            self._update_connection(True)
 
     def _update_connection(self, is_connected):
         """Update de interne status en push naar Home Assistant."""
