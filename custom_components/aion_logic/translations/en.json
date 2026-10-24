@@ -88,6 +88,7 @@
                     "motion_sensors": "🏃‍♂️ Motion Sensors (Local Light & Smart Presence)",
                     "motion_lights": "💡 Motion Lights (Optional: Which lights respond to the sensor?)",
                     "motion_auto_on": "💡 Auto-ON? (Disable to use the sensor as a smart off-timer only)",
+                    "motion_night_guard": "🌙 Night Guard (Silent alarm on motion)",
                     "motion_only_when_dark": "🌙 Only when dark? (Uses sun position, ideal for rooms with windows)",
                     "motion_timer": "⏱️ Timer: Auto-off lights after (minutes)",
                     "window_sensors": "Window/Door & Vibration Sensors",
