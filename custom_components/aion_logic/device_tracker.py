@@ -88,13 +88,16 @@ class AionTagTracker(TrackerEntity):
         """Wordt getriggerd bij ELKE wijziging van de tag (ook al is het ruis)."""
         new_state = event.data.get("new_state")
         
-        # 1. Harde uitschakeling (geen 45s wachten)
-        if not new_state or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN, "off", "false", "not_home"):
+        if not new_state:
+            return
+            
+        # 1. Harde uitschakeling ALLEEN bij expliciete UIT-status. 
+        if new_state.state in ("off", "false", "not_home"):
             self._update_connection(False)
             return
 
-        # 2. Zwak signaal? Negeren (Laat de stale timer zijn werk doen)
-        if not self._is_valid_presence(new_state.state):
+        # 2. Zwak signaal of even Unavailable? Negeren (Laat de 45s stale timer zijn werk doen)
+        if new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN) or not self._is_valid_presence(new_state.state):
             return
             
         # 3. Sterk signaal? Update geheugen en zet AAN
@@ -105,7 +108,7 @@ class AionTagTracker(TrackerEntity):
         """Check of we de 45 seconden timeout hebben bereikt zonder STERKE updates."""
         state_obj = self.hass.states.get(self._source_entity_id)
         
-        if not state_obj or state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN, "off", "false", "not_home"):
+        if state_obj and state_obj.state in ("off", "false", "not_home"):
             self._update_connection(False)
             return
             
