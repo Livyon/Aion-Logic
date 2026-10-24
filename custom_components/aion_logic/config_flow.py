@@ -209,7 +209,6 @@ def _get_zone_schema_generic(zone_data: dict, zone_slot_key: str = None) -> vol.
         vol.Optional("motion_sensors", default=zone_data.get("motion_sensors", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain=["binary_sensor", "sensor", "event"], multiple=True)),
         vol.Optional("motion_lights", default=zone_data.get("motion_lights", [])): selector.EntitySelector(selector.EntitySelectorConfig(domain=["light", "switch"], multiple=True)),
         vol.Optional("motion_auto_on", default=zone_data.get("motion_auto_on", True)): selector.BooleanSelector(),
-        vol.Optional("motion_night_guard", description="Nachtbewaking (Stil alarm bij beweging)", default=zone_data.get("motion_night_guard", False)): selector.BooleanSelector(),
         vol.Optional("motion_only_when_dark", default=zone_data.get("motion_only_when_dark", False)): selector.BooleanSelector(),
         vol.Required("motion_timer", default=zone_data.get("motion_timer", 2)): selector.NumberSelector({"min": 1, "max": 60, "step": 1, "mode": "slider", "unit_of_measurement": "min"}),
         vol.Required("day_start", default=zone_data.get("day_start", "06:00:00")): selector.TimeSelector(),
