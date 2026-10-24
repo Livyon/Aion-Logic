@@ -1266,7 +1266,9 @@ class AionLogicCoordinator:
                     "schedule": value.get("schedule", {}),
                     "enable_boost": value.get("enable_boost", True),
                     "is_reference": value.get("is_reference", False),
-                    "_all_climate_entities": value.get("climate_entities", [])
+                    "_all_climate_entities": value.get("climate_entities", []),
+                    "time_day": value.get("time_day") or value.get("tijd_dag"),
+                    "time_night": value.get("time_night") or value.get("tijd_nacht")
                 }
 
         raw_speakers = self.options.get(CONF_DEFENSE_SPEAKERS, [])
