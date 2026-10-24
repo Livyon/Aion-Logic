@@ -89,6 +89,7 @@
                     "motion_sensors": "🏃‍♂️ Bewegingssensoren (Lokaal Licht & Slimme Aanwezigheid)",
                     "motion_lights": "💡 Bewegings-Lichten (Optioneel: Welke lampen reageren op de melder?)",
                     "motion_auto_on": "💡 Automatisch AAN? (Zet uit om de melder enkel als slimme uitschakel-timer te gebruiken)",
+                    "motion_night_guard": "🌙 Nachtbewaking (Stil alarm bij beweging)",
                     "motion_only_when_dark": "🌙 Alleen als het donker is? (Gebruikt de stand van de zon, ideaal voor ruimtes met ramen)",
                     "motion_timer": "⏱️ Timer: Licht automatisch uit na (minuten)",
                     "window_sensors": "Raam/Deur & Trilling Sensoren",
