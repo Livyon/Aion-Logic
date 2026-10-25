@@ -1206,6 +1206,19 @@ class AionLogicCoordinator:
             else:
                 _LOGGER.debug(f"⚡ Energie is normaal ({current_val} != {energy_tag})")
 
+        # --- WI-FI TRACKER LOGICA ---
+        home_ssid = str(self.options.get("home_wifi_ssid", "")).strip().lower()
+        is_wifi_connected = False
+        active_wifi = []
+        for wifi_ent in self.options.get("wifi_tracker_sensors", []):
+            w_state = self._get_state(wifi_ent)
+            if w_state:
+                w_str = str(w_state).lower()
+                if w_str in ["home", "on", "connected", "true"] or (home_ssid and w_str == home_ssid):
+                    is_wifi_connected = True
+                    active_wifi.append(wifi_ent)
+        
+
         # 7. Driver Profiles
         active_drivers = []
         if s1 := self.options.get(CONF_DRIVER_1_SENSOR):
@@ -1283,7 +1296,9 @@ class AionLogicCoordinator:
                 "central_ventilation_unit": self.options.get(CONF_CENTRAL_VENT),
                 "central_vent_state": self._get_state(self.options.get(CONF_CENTRAL_VENT)),
                 "humidity_control_enabled": self.options.get("enable_humidity_control", True),
-                "speaker_volumes": speaker_vols
+                "speaker_volumes": speaker_vols,
+                "wifi_connected": is_wifi_connected,
+                "active_wifi_trackers": active_wifi
             }, 
             "persons": persons_data,
             "climate_zones": climate_zones_data,
