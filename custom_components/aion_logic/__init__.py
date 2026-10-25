@@ -131,7 +131,8 @@ class AionLogicCoordinator:
         
         # --- DEAD MAN'S SWITCH ---
         self._fail_count = 0 
-        self._fail_threshold = 3 
+        self._fail_threshold = 3
+        self._action_lock = asyncio.Lock()
 
     async def _async_extract_camera_media(self, camera_entity, timeout_live=4.0, ignore_time_limit=False):
         """Haalt het beste beeld van de camera (Live of Media Source) als base64."""
@@ -1425,6 +1426,11 @@ class AionLogicCoordinator:
             _LOGGER.debug("🧠 Simulatie-vlaggen succesvol gereset.")
 
     async def _execute_actions(self, actions: list, climate_zones_payload: dict):
+        """Voert de acties uit met een interne lock tegen Vaillant 429 spam."""
+        async with self._action_lock:
+            return await self._execute_actions_locked(actions, climate_zones_payload)
+
+    async def _execute_actions_locked(self, actions: list, climate_zones_payload: dict):        
         """Voert de acties uit (Clean Architecture v2.3.7)."""
         _LOGGER.debug(f"Uitvoeren van {len(actions)} acties ontvangen van Aion Logic API...")
         
@@ -1562,7 +1568,8 @@ class AionLogicCoordinator:
                             cur_t = state_obj.attributes.get("temperature")
                             tgt_t = exec_data.get("temperature")
                             if cur_t is not None and tgt_t is not None and float(cur_t) == float(tgt_t):
-                                should_act = False                            
+                                if state_obj.state in ["heat", "heat_cool", "auto"]:
+                                    should_act = False                           
                         elif exec_service in ["turn_on", "turn_off"]:
                             tgt_state = "on" if exec_service == "turn_on" else "off"
                             if state_obj.state == tgt_state: should_act = False
@@ -1866,9 +1873,14 @@ class AionLogicCoordinator:
                     self._fail_count = 0
                     await self.hass.services.async_call("persistent_notification", "dismiss", {"notification_id": "aion_emergency_fallback"})
                 
-                executed = 0
+                # --- 1. FAST-TRACK SCENARIO (Directe UI & Automatisering update) ---
+                if scenario := response.get('scenario'):
+                    self.hass.bus.async_fire("aion_logic_scenario_update", {"scenario": scenario})
+                    _LOGGER.info(f"🎯 Aion Logic Scenario gewijzigd naar: {scenario}")
+                
+                # --- 2. DECOUPLED ACTIONS (Voorkomt gijzeling van de main loop) ---
                 if actions := response.get("actions"):
-                    executed = await self._execute_actions(actions, payload.get("climate_zones", {}))
+                    self.hass.async_create_task(self._execute_actions(actions, payload.get("climate_zones", {})))
                 
                 # --- SURGICAL UPDATE: ROBUUSTE LICENTIE FEEDBACK ---
                 # We lezen het 'Paspoort' dat main.py nu meestuurt
@@ -1928,10 +1940,6 @@ class AionLogicCoordinator:
                          "new_mpd": self.options.get("minutes_per_degree", 30.0),
                          "timestamp": dt_util.now().isoformat()
                      })
-
-                if scenario := response.get('scenario'):
-                    self.hass.bus.async_fire("aion_logic_scenario_update", {"scenario": scenario})
-                    _LOGGER.info(f"🎯 Aion Logic: {scenario} | Acties: {executed}")
 
         except (ApiAuthError, ApiConnectionError, ApiTimeoutError) as e:
             self._fail_count += 1
