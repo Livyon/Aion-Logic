@@ -546,12 +546,26 @@ class AionLogicCoordinator:
                     scenario = str(self._get_state("sensor.aion_logic_scenario") or "").lower()
                     brightness = self.options.get("ls_night_on_brightness", 15) if ("nacht" in scenario or "slapen" in scenario) else 100
                         
-                    _LOGGER.debug(f"🏃‍♂️ Beweging in {target_zone_id} ({entity_id}). Licht AAN ({brightness}%).")
-                    
-                    lights = [e for e in motion_lights if e.startswith("light.")]
-                    switches = [e for e in motion_lights if e.startswith("switch.")]
-                    if lights: await self.hass.services.async_call("light", "turn_on", {"entity_id": lights, "brightness_pct": brightness}, blocking=False)
-                    if switches: await self.hass.services.async_call("homeassistant", "turn_on", {"entity_id": switches}, blocking=False)
+                    # --- ZIGBEE SPAM FILTER (Local Smart Valve) ---
+                    # Voorkom mesh-flood door enkel lampen aan te sturen die daadwerkelijk uit staan of een verkeerde helderheid hebben.
+                    lights_to_turn_on = []
+                    for l in motion_lights:
+                        state_obj = self.hass.states.get(l)
+                        if not state_obj or state_obj.state != "on":
+                            lights_to_turn_on.append(l)
+                        elif l.startswith("light.") and state_obj.attributes.get("brightness"):
+                            current_bright = int((state_obj.attributes.get("brightness") / 255) * 100)
+                            if abs(current_bright - brightness) > 5:
+                                lights_to_turn_on.append(l)
+
+                    if lights_to_turn_on:
+                        _LOGGER.debug(f"🏃‍♂️ Beweging in {target_zone_id} ({entity_id}). Licht AAN ({brightness}%).")
+                        lights = [e for e in lights_to_turn_on if e.startswith("light.")]
+                        switches = [e for e in lights_to_turn_on if e.startswith("switch.")]
+                        if lights: await self.hass.services.async_call("light", "turn_on", {"entity_id": lights, "brightness_pct": brightness}, blocking=False)
+                        if switches: await self.hass.services.async_call("homeassistant", "turn_on", {"entity_id": switches}, blocking=False)
+                    else:
+                        _LOGGER.debug(f"🏃‍♂️ Beweging in {target_zone_id} ({entity_id}). (Licht was al correct aan, commando overgeslagen).")
             else:
                 _LOGGER.debug(f"🏃‍♂️ Beweging in {target_zone_id} ({entity_id}). Timer gepauzeerd (Auto-AAN is uitgeschakeld).")
 
