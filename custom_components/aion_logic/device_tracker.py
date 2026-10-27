@@ -81,7 +81,7 @@ class AionTagTracker(TrackerEntity):
         if state_str in (STATE_UNAVAILABLE, STATE_UNKNOWN, "off", "false", "not_home"):
             return False
         try:
-            if float(state_str) < -85.0:
+            if float(state_str) < -100.0:
                 return False
         except ValueError:
             # Wi-Fi netwerknaam (SSID) of string-status afhandeling
