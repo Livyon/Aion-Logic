@@ -1182,7 +1182,8 @@ class AionLogicCoordinator:
             "boost_start_temp": active_boost_start_temp,
             "boost_target_prefix": target_prefix,
             "previous_scenario": self._get_state_attr(f"sensor.{DOMAIN}_scenario", "raw_scenario") or "unknown",
-            "previous_scenario_display": self._get_state("sensor.aion_logic_scenario"), 
+            "previous_scenario_display": self._get_state("sensor.aion_logic_scenario"),
+            "is_recent_restart": (nu - getattr(self, '_startup_time', nu)).total_seconds() < 300,
         }
 
         if context_data["is_time_simulated"]:
