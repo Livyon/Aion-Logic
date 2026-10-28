@@ -856,10 +856,12 @@ class AionLogicCoordinator:
         # Dynamic Window Sensors
         window_sensors = []
         motion_sensors = []
+        climate_sensors = []
         for key, zone_cfg in self.options.items():
             if (key.startswith("area_") or key.startswith("zone_")) and isinstance(zone_cfg, dict):
                 if s := zone_cfg.get("window_sensors"): window_sensors.extend(s)
                 if m := zone_cfg.get("motion_sensors"): motion_sensors.extend(m)
+                if c := zone_cfg.get("climate_entities"): climate_sensors.extend(c)    
         
         if window_sensors:
             self._listeners.append(async_track_state_change_event(self.hass, list(set(window_sensors)), self.async_trigger_main_logic))
@@ -901,6 +903,10 @@ class AionLogicCoordinator:
                         await self.async_handle_motion_trigger(DummyEvent(eid, eff_state))
                         
             self._listeners.append(self.hass.bus.async_listen("zha_event", async_handle_zha_event))
+
+        if climate_sensors:
+            _LOGGER.debug(f"Listener geregistreerd voor Thermostaten (Manuele Override): {len(climate_sensors)} sensoren.")
+            self._listeners.append(async_track_state_change_event(self.hass, list(set(climate_sensors)), self.async_trigger_main_logic))        
 
         self._listeners.append(async_track_time_change(self.hass, self.async_trigger_main_logic, hour=23, minute=0, second=0))
         self._listeners.append(async_track_time_change(self.hass, self.async_trigger_main_logic, hour=4, minute=59, second=59))
@@ -1265,18 +1271,30 @@ class AionLogicCoordinator:
         for key, value in self.options.items():
             if (key.startswith("area_") or key.startswith("zone_")) and isinstance(value, dict):
                 current_temp_zone = None
+                target_temp_zone = None
+                hvac_mode_zone = None
+                clim_ents = value.get("climate_entities", [])
+                
                 if sensor := value.get("current_temp_sensor"):
                     val = self._get_state(sensor)
                     if val not in [None, STATE_UNKNOWN, STATE_UNAVAILABLE]: current_temp_zone = float(val)
-                elif clim_ents := value.get("climate_entities"):
+                elif clim_ents:
                     val = self._get_state_attr(clim_ents[0], "current_temperature")
                     if val is not None: 
                         try: current_temp_zone = float(val)
                         except: pass
+                        
+                if clim_ents:
+                    target_val = self._get_state_attr(clim_ents[0], "temperature")
+                    if target_val is not None:
+                        try: target_temp_zone = float(target_val)+                        except: pass
+                    hvac_mode_zone = self._get_state(clim_ents[0])
 
                 climate_zones_data[key] = {
                     "lookup_prefix": value.get("lookup_prefix"),
                     "current_temp": current_temp_zone,
+                    "target_temp": target_temp_zone,
+                    "hvac_mode": hvac_mode_zone,                    
                     "window_sensors": value.get("window_sensors", []),
                     "lighting_entities": value.get("lighting_entities", []),
                     "zone_ventilation": value.get("zone_ventilation"),
