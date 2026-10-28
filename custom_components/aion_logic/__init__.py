@@ -1287,7 +1287,8 @@ class AionLogicCoordinator:
                 if clim_ents:
                     target_val = self._get_state_attr(clim_ents[0], "temperature")
                     if target_val is not None:
-                        try: target_temp_zone = float(target_val)+                        except: pass
+                        try: target_temp_zone = float(target_val)                        
+                        except: pass
                     hvac_mode_zone = self._get_state(clim_ents[0])
 
                 climate_zones_data[key] = {
