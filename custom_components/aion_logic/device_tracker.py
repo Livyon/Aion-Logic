@@ -77,11 +77,12 @@ class AionTagTracker(TrackerEntity):
         await self._async_check_stale_state(dt_util.utcnow())
         
     def _is_valid_presence(self, state_str):
-        """Domme Edge filter: blokkeert zwakke RSSI signalen en expliciete uit-statussen."""
+        """Domme Edge filter: blokkeert extreem zwakke RSSI signalen en expliciete uit-statussen."""
         if state_str in (STATE_UNAVAILABLE, STATE_UNKNOWN, "off", "false", "not_home"):
             return False
         try:
-            if float(state_str) < -100.0:
+            # Versoepeld naar -115.0 om zwakke maar valide signalen niet te negeren
+            if float(state_str) < -115.0:
                 return False
         except ValueError:
             # Wi-Fi netwerknaam (SSID) of string-status afhandeling
@@ -102,7 +103,7 @@ class AionTagTracker(TrackerEntity):
             self._update_connection(False)
             return
 
-        # 2. Zwak signaal of even Unavailable? Negeren (Laat de 45s stale timer zijn werk doen)
+        # 2. Zwak signaal of even Unavailable? Negeren (Laat de 180s stale timer zijn werk doen)
         if new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN) or not self._is_valid_presence(new_state.state):
             return
             
@@ -111,14 +112,15 @@ class AionTagTracker(TrackerEntity):
         self._update_connection(True)
 
     async def _async_check_stale_state(self, now):
-        """Check of we de 45 seconden timeout hebben bereikt zonder STERKE updates."""
+        """Check of we de 180 seconden timeout hebben bereikt zonder updates."""
         state_obj = self.hass.states.get(self._source_entity_id)
         
         if state_obj and state_obj.state in ("off", "false", "not_home"):
             self._update_connection(False)
             return
             
-        if self._last_strong_signal and (now - self._last_strong_signal).total_seconds() < 45:
+        # Timeout verhoogd naar 180 seconden conform de native 'consider_home' instelling
+        if self._last_strong_signal and (now - self._last_strong_signal).total_seconds() < 180:
             self._update_connection(True)
         else:
             self._update_connection(False)
