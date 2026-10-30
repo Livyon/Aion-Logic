@@ -7,5 +7,5 @@
     "documentation": "https://sites.google.com/view/core-automations/setup",
     "iot_class": "cloud_polling",
     "issue_tracker": "https://sites.google.com/view/core-automations/over-ons-contact",
-    "version": "3.1.0"
+    "version": "3.1.1"
 }
