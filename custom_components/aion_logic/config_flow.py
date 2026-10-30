@@ -45,7 +45,6 @@ def _get_general_schema(options: dict) -> vol.Schema:
             "domain": ["binary_sensor", "device_tracker", "sensor", "input_boolean", "event"], 
             "multiple": True
         }),
-        vol.Optional("enable_pet_mode", default=options.get("enable_pet_mode", False)): selector.BooleanSelector(),
         
         # 4. Slim Ontwaken (Early Bird)
         vol.Optional(CONF_EARLY_BIRD_SENSORS, default=options.get(CONF_EARLY_BIRD_SENSORS, [])): selector.EntitySelector({
