@@ -1,4 +1,4 @@
-"""Ondersteuning voor Aion Logic BTHome Tag Trackers."""
+"""Ondersteuning voor Aion Logic BTHome Tag Trackers (Geoptimaliseerd voor BLE-only)."""
 import logging
 from datetime import timedelta
 
@@ -13,21 +13,20 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Stelt de Aion device trackers in op basis van config opties."""
+    """Stelt de Aion device trackers in uitsluitend voor fysieke BLE-tags."""
+    # We halen wifi_tracker_sensors hier bewust weg uit de logica
     presence_sensors = entry.options.get("presence_sensors", [])
-    wifi_sensors = entry.options.get("wifi_tracker_sensors", [])
     
-    all_trackers = list(set(presence_sensors + wifi_sensors))
-    if not all_trackers:
+    if not presence_sensors:
         return
 
     entities = []
-    for sensor_id in all_trackers:
+    for sensor_id in presence_sensors:
         entities.append(AionTagTracker(hass, entry.entry_id, sensor_id))
     
     if entities:
         async_add_entities(entities)
-        _LOGGER.debug(f"Aion Logic heeft {len(entities)} device_trackers aangemaakt voor fysieke tags.")
+        _LOGGER.debug(f"Aion Logic heeft {len(entities)} dedicated BLE device_trackers aangemaakt.")
 
 class AionTagTracker(TrackerEntity):
     """Een dedicated Device Tracker voor BLE Tags (180s stale beveiliging)."""
@@ -45,7 +44,7 @@ class AionTagTracker(TrackerEntity):
 
     @property
     def source_type(self):
-        """BTHome tags worden gecategoriseerd als Bluetooth LE trackers."""
+        """BTHome tags worden gecategoriseerd as Bluetooth LE trackers."""
         return SourceType.BLUETOOTH_LE
         
     @property
@@ -55,7 +54,7 @@ class AionTagTracker(TrackerEntity):
 
     @property
     def icon(self):
-        """Visuele feedback."""
+        """Visuele feedback op basis van bluetooth-verbinding."""
         return "mdi:bluetooth-connect" if self._is_connected else "mdi:bluetooth-off"
 
     async def async_added_to_hass(self):
@@ -66,7 +65,7 @@ class AionTagTracker(TrackerEntity):
             )
         )
         
-        # Controleer elke 10 seconden actief op een 'bevroren' status
+        # Controleer elke 10 seconden actief op een 'bevroren' status (de 180s stale timer)
         self.async_on_remove(
             async_track_time_interval(
                 self.hass, self._async_check_stale_state, timedelta(seconds=10)
@@ -77,37 +76,35 @@ class AionTagTracker(TrackerEntity):
         await self._async_check_stale_state(dt_util.utcnow())
         
     def _is_valid_presence(self, state_str):
-        """Domme Edge filter: blokkeert extreem zwakke RSSI signalen en expliciete uit-statussen."""
+        """Filtert ongeldige statussen en negeert extreem zwakke RSSI signalen."""
         if state_str in (STATE_UNAVAILABLE, STATE_UNKNOWN, "off", "false", "not_home"):
             return False
         try:
-            # Versoepeld naar -115.0 om zwakke maar valide signalen niet te negeren
-            if float(state_str) < -115.0:
+            # Versoepeld naar -125.0 zodat het allereerste uiterste signaal bij thuiskomst direct telt
+            if float(state_str) < -125.0:
                 return False
         except ValueError:
-            # Wi-Fi netwerknaam (SSID) of string-status afhandeling
-            state_lower = state_str.lower()
-            if state_lower in ("not connected", "<not connected>", "disconnected", "none", "", "unknown"):
-                return False
+            # Als het onverhoopt geen getal/RSSI is, markeren we het als ongeldig voor deze BLE-tracker
+            return False
         return True
         
     async def _async_handle_sensor_state_change(self, event):
-        """Wordt getriggerd bij ELKE wijziging van de tag (ook al is het ruis)."""
+        """Wordt getriggerd bij ELKE wijziging van de tag."""
         new_state = event.data.get("new_state")
         
         if not new_state:
             return
             
-        # 1. Harde uitschakeling ALLEEN bij expliciete UIT-status. 
+        # 1. Harde uitschakeling ALLEEN bij expliciete UIT-status
         if new_state.state in ("off", "false", "not_home"):
             self._update_connection(False)
             return
 
-        # 2. Zwak signaal of even Unavailable? Negeren (Laat de 180s stale timer zijn werk doen)
+        # 2. Zwak signaal of Unavailable? Negeren (Laat de 180s stale timer zijn werk doen)
         if new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN) or not self._is_valid_presence(new_state.state):
             return
             
-        # 3. Sterk signaal? Update geheugen en zet AAN
+        # 3. Valide signaal ontvangen: update geheugen en zet onmiddellijk AAN
         self._last_strong_signal = dt_util.utcnow()
         self._update_connection(True)
 
@@ -119,16 +116,17 @@ class AionTagTracker(TrackerEntity):
             self._update_connection(False)
             return
             
-        # Timeout verhoogd naar 180 seconden conform de native 'consider_home' instelling
+        # Timeout van 180 seconden conform de 'consider_home' filosofie
         if self._last_strong_signal and (now - self._last_strong_signal).total_seconds() < 180:
             self._update_connection(True)
         else:
             self._update_connection(False)
 
     def _update_connection(self, is_connected):
-        """Update de interne status en push naar Home Assistant."""
+        """Update de interne status en push deze DIRECT naar Home Assistant core."""
         if self._is_connected != is_connected:
             self._is_connected = is_connected
             status_text = "THUIS (Verbonden)" if is_connected else "AFWEZIG (Verbroken)"
             _LOGGER.info(f"🏷️ BLE Tag '{self._attr_name}' ({self._source_entity_id}) status is nu: {status_text}")            
-            self.async_write_ha_state()
+            # Geforceerde en onmiddellijke status update naar Home Assistant core (geen vertraging meer!)
+            self.async_schedule_update_ha_state()
