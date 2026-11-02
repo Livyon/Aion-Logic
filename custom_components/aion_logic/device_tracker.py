@@ -14,7 +14,6 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Stelt de Aion device trackers in uitsluitend voor fysieke BLE-tags."""
-    # We halen wifi_tracker_sensors hier bewust weg uit de logica
     presence_sensors = entry.options.get("presence_sensors", [])
     
     if not presence_sensors:
@@ -26,9 +25,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
     
     if entities:
         async_add_entities(entities)
-        _LOGGER.debug(f"Aion Logic heeft {len(entities)} dedicated BLE device_trackers aangemaakt.")
+        _LOGGER.debug(f"Aion Logic heeft {len(entities)} ScannerEntities aangemaakt voor BLE tags.")
 
-class AionTagTracker(TrackerEntity):
+class AionTagTracker(ScannerEntity):
     """Een dedicated Device Tracker voor BLE Tags (180s stale beveiliging)."""
     
     def __init__(self, hass, entry_id, source_entity_id):
@@ -41,6 +40,12 @@ class AionTagTracker(TrackerEntity):
         
         clean_name = source_entity_id.split('.')[-1].replace('_', ' ').title()
         self._attr_name = f"Aion {clean_name}"
+
+    @property
+    def mac_address(self) -> str | None:
+        """Niet vereist voor pure state-mapping, vereist door base class."""
+        return None
+    
 
     @property
     def source_type(self):
