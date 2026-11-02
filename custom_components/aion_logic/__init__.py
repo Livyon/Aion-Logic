@@ -1730,6 +1730,7 @@ class AionLogicCoordinator:
             is_armed = True
         elif guard_mode == "autonomous":
             persons_home = any(self._get_state(p) == "home" for p in self.options.get("person_entities", []))
+            if self._get_internal_switch_state("guest_mode") == "on": persons_home = True
             scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
             if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
                 if not persons_home and self.options.get("guard_autonomous_night_only", False):
