@@ -301,6 +301,20 @@ class AionLogicGuardianSensor(SensorEntity):
             
             # Check Gasten
             if self._get_switch_state("guest_mode"): is_occupied = True
+
+            # --- ANCHOR GUARD (Wi-Fi & BLE) ---
+            home_ssid = str(options.get("home_wifi_ssid", "")).strip().lower()
+            for wifi_ent in options.get("wifi_tracker_sensors", []):
+                w_state = self.hass.states.get(wifi_ent)
+                if w_state:
+                    w_str = str(w_state.state).lower()
+                    if w_str in ["home", "on", "connected", "true"] or (home_ssid and w_str == home_ssid):
+                        is_occupied = True
+                        
+            for tag_ent in options.get("presence_sensors", []):
+                t_state = self.hass.states.get(tag_ent)
+                if t_state and str(t_state.state).lower() in ["home", "on", "connected", "true"]:
+                    is_occupied = True            
             
             current_scenario = str(self._scenario_sensor.native_value).lower()                
 
