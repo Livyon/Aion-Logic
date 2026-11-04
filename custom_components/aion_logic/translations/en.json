@@ -93,7 +93,7 @@
                     "enable_boost": "Allow Boost in this room?",
                     "is_reference": "Referenceroom (Primary room start/stop proactive start)",
                     "is_entry_zone": "Entry zone (Entry/Exit) for alarm",
-                    "enable_safety_net": "Smart Safety Net (Layer 2): Allows motion detectors to monitor passively, even when windows or doors remain closed",
+                    "enable_safety_net": "Smart Safety Net (Layer 2): Allows motion detectors to monitor passively, even when windows or doors remain closed (Caution with pets without a camera)",
                     "is_night_origin": "Night Origin Point (Bedroom): Motion from this room suppresses the nightly safety net (Occupant)",
                     "day_start": "Day starts at",
                     "night_start": "Night starts at",
