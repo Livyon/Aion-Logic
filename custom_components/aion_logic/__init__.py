@@ -522,7 +522,16 @@ class AionLogicCoordinator:
                     break
         
         if not target_zone_id or not zone_config: return
-        if not (motion_lights := zone_config.get("motion_lights", [])): return
+        motion_lights = zone_config.get("motion_lights", [])
+        is_security_motion = zone_config.get("enable_safety_net", False) or zone_config.get("is_night_origin", False)
+        if not motion_lights and not is_security_motion: return
+
+        if eff_state == "on" and is_security_motion:
+            guard_mode = self.options.get(CONF_GUARD_MODE, GUARD_MODE_AUTONOMOUS)
+            if guard_mode != GUARD_MODE_DISABLED:
+                self._perimeter_timers[f"cloud_{entity_id}"] = dt_util.utcnow()
+                self.hass.async_create_task(self.async_trigger_main_logic(event))
+        if not motion_lights: return
         
         # 2. BEWEGING GEDETECTEERD (Licht Direct AAN)
         if eff_state == "on":
@@ -1311,6 +1320,9 @@ class AionLogicCoordinator:
                     "target_temp": target_temp_zone,
                     "hvac_mode": hvac_mode_zone,                    
                     "window_sensors": value.get("window_sensors", []),
+                    "motion_sensors": value.get("motion_sensors", []),
+                    "enable_safety_net": value.get("enable_safety_net", False),
+                    "is_night_origin": value.get("is_night_origin", False),                    
                     "lighting_entities": value.get("lighting_entities", []),
                     "zone_ventilation": value.get("zone_ventilation"),
                     "humidity_sensor": value.get("humidity_sensor"),
@@ -1861,8 +1873,9 @@ class AionLogicCoordinator:
                                 if is_armed and is_window_trigger and trigger_memory_state in ["on", "open"] and trigger_entity_id in windows:
                                     any_window_open = True                                
                                 any_motion_active = any(self._get_state(m) == "on" for m in motions)
+                                safety_net_enabled = zone_cfg.get("enable_safety_net", False)
                                 
-                                if any_window_open and any_motion_active:
+                                if (any_window_open or safety_net_enabled) and any_motion_active:
                                     level_2_intrusion = True
                                     _LOGGER.warning(f"🚨 Sensor Fusion: Niveau 2 Inbraak in {zone_cfg.get('zone_name', 'Zone')}! Camera Reflex start...")
                                         
