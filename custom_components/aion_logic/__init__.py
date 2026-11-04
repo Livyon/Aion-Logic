@@ -933,6 +933,19 @@ class AionLogicCoordinator:
         except ValueError: 
             pass
 
+        zone_times = set()
+        for key, zone_cfg in self.options.items():
+            if (key.startswith("area_") or key.startswith("zone_")) and isinstance(zone_cfg, dict):
+                for t_key in ("day_start", "night_start"):
+                    if t_val := zone_cfg.get(t_key):
+                        try:
+                            zt = dt_util.dt.time.fromisoformat(t_val)
+                            zone_times.add((zt.hour, zt.minute))
+                        except ValueError:
+                            pass
+        for z_hour, z_min in zone_times:
+            self._listeners.append(async_track_time_change(self.hass, self.async_trigger_main_logic, hour=z_hour, minute=z_min, second=0))        
+
         self._listeners.append(async_track_time_interval(self.hass, self.async_trigger_main_logic, dt_util.dt.timedelta(minutes=10)))
         self._listeners.append(async_track_time_interval(self.hass, self.async_check_interval, timedelta(minutes=5)))
         self._listeners.append(self.hass.bus.async_listen("mobile_app_notification_action", self._async_handle_notification_action))
@@ -1302,7 +1315,10 @@ class AionLogicCoordinator:
                     "zone_ventilation": value.get("zone_ventilation"),
                     "humidity_sensor": value.get("humidity_sensor"),
                     "humidity_state": self._get_state(value.get("humidity_sensor")),
-                    "schedule": value.get("schedule", {}),
+                    "schedule": value.get("schedule") or {
+                        "day_start": value.get("day_start"),
+                        "night_start": value.get("night_start"),
+                    },
                     "enable_boost": value.get("enable_boost", True),
                     "is_reference": value.get("is_reference", False),
                     "_all_climate_entities": value.get("climate_entities", [])
