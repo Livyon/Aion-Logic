@@ -8,6 +8,8 @@ aion_logic_dynamic_background_theme:
   background-color: "rgba(0,0,0,0)"
   ha-background-image: "none"
   ha-background-color: "rgba(0,0,0,0)"
+  lovelace-background: "rgba(0,0,0,0)"
+  ha-panel-background: "rgba(0,0,0,0)"  
 
   #--------------------------------------------------
   #-- Kleurenpalet --#
