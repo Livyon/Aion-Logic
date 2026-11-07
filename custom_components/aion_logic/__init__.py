@@ -357,7 +357,7 @@ class AionLogicCoordinator:
         if not new_state or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN): return
 
         # Bepaal dynamische Ghost Window (15 min nachts, minimaal 5 min overdag tegen Deep Sleep)
-        scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
+        scenario_state = self._get_state_attr(f"sensor.{DOMAIN}_scenario", "raw_scenario") or self._get_state(f"sensor.{DOMAIN}_scenario") or ""
         eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else max(300, GHOST_WINDOW_SECONDS)
 
         
@@ -431,7 +431,7 @@ class AionLogicCoordinator:
                 if departed_at:
                     absence_duration = (dt_util.utcnow() - departed_at).total_seconds()
                     if absence_duration <= eff_ghost_window:
-                        current_scenario = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
+                        current_scenario = str(self._get_state_attr(f"sensor.{DOMAIN}_scenario", "raw_scenario") or self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
                         if "afwezig" in current_scenario or "alarm" in current_scenario:
                             _LOGGER.info(f"🔓 Ghost Bounce overschreven: Systeem stond op Afwezig/Alarm, snelle thuiskomst toegestaan voor '{entity_id}'.")
                         else:
@@ -552,7 +552,7 @@ class AionLogicCoordinator:
                 
                 if allow_turn_on:
                     # Check scenario voor helderheid (Nacht = zacht)
-                    scenario = str(self._get_state("sensor.aion_logic_scenario") or "").lower()
+                    scenario = str(self._get_state_attr(f"sensor.{DOMAIN}_scenario", "raw_scenario") or self._get_state("sensor.aion_logic_scenario") or "").lower()
                     brightness = self.options.get("ls_night_on_brightness", 15) if ("nacht" in scenario or "slapen" in scenario) else 100
                         
                     # --- ZIGBEE SPAM FILTER (Local Smart Valve) ---
@@ -1148,7 +1148,7 @@ class AionLogicCoordinator:
                 # --- Ghost Window ---
                 eff_state = state_obj.state
                 is_ghost_masked = False
-                scenario_state = self._get_state(f"sensor.{DOMAIN}_scenario") or ""
+                scenario_state = self._get_state_attr(f"sensor.{DOMAIN}_scenario", "raw_scenario") or self._get_state(f"sensor.{DOMAIN}_scenario") or ""
                 eff_ghost_window = 900 if "nacht" in scenario_state.lower() or "slapen" in scenario_state.lower() else max(300, GHOST_WINDOW_SECONDS)
                  
                 # Haal rauwe GPS nauwkeurigheid op voor de Cloud
@@ -1165,7 +1165,7 @@ class AionLogicCoordinator:
                     # Dynamische bounce-limiet: 30 minuten bij slechte GPS, 5 minuten bij goede GPS
                     bounce_limit = 1800 if is_fuzzy_dep else 300
                     if (dt_util.utcnow() - departed_at).total_seconds() < bounce_limit:
-                        scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
+                        scenario_state = str(self._get_state_attr(f"sensor.{DOMAIN}_scenario", "raw_scenario") or self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
                         if "afwezig" not in scenario_state and "alarm" not in scenario_state:
                             is_bounce = True
                         
@@ -1217,7 +1217,9 @@ class AionLogicCoordinator:
             "real_time": nu.strftime('%H:%M:%S'),
             "is_time_simulated": (simulated_time_str != nu.strftime('%H:%M:%S')), 
             "trigger_entity_id": trigger_entity_id,
-            "timezone": str(dt_util.DEFAULT_TIME_ZONE), 
+            "timezone": str(dt_util.DEFAULT_TIME_ZONE),
+            "language": getattr(self.hass.config, "language", "nl"),
+            "country": getattr(self.hass.config, "country", "BE"),            
             "boost_start_time": active_boost_start,
             "boost_start_temp": active_boost_start_temp,
             "boost_target_prefix": target_prefix,
@@ -1781,7 +1783,7 @@ class AionLogicCoordinator:
         elif guard_mode == "autonomous":
             persons_home = any(self._get_state(p) == "home" for p in self.options.get("person_entities", []))
             if self._get_internal_switch_state("guest_mode") == "on": persons_home = True
-            scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
+            scenario_state = str(self._get_state_attr(f"sensor.{DOMAIN}_scenario", "raw_scenario") or self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
             if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
                 if not persons_home and self.options.get("guard_autonomous_night_only", False):
                     sun_state = self._get_state("sun.sun")
@@ -1867,7 +1869,7 @@ class AionLogicCoordinator:
                     is_armed = True
                 elif guard_mode == "autonomous":
                     persons_home = any(self._get_state(p) == "home" for p in self.options.get("person_entities", []))
-                    scenario_state = str(self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
+                    scenario_state = str(self._get_state_attr(f"sensor.{DOMAIN}_scenario", "raw_scenario") or self._get_state(f"sensor.{DOMAIN}_scenario") or "").lower()
                     if not persons_home or "nacht" in scenario_state or "slapen" in scenario_state:
                         if not persons_home and self.options.get("guard_autonomous_night_only", False):
                             sun_state = self._get_state("sun.sun")
@@ -1961,7 +1963,10 @@ class AionLogicCoordinator:
                 
                 # --- 1. FAST-TRACK SCENARIO (Directe UI & Automatisering update) ---
                 if scenario := response.get('scenario'):
-                    self.hass.bus.async_fire("aion_logic_scenario_update", {"scenario": scenario})
+                    self.hass.bus.async_fire("aion_logic_scenario_update", {
+                        "scenario": scenario,
+                        "raw_scenario": response.get("raw_scenario", scenario)
+                    })
                     _LOGGER.info(f"🎯 Aion Logic Scenario gewijzigd naar: {scenario}")
                 
                 # --- 2. DECOUPLED ACTIONS (Voorkomt gijzeling van de main loop) ---
