@@ -179,7 +179,7 @@
                 "description": "{warning_text}How should Aion Logic escalate in an emergency?",
                 "data": {
                     "security_notify_service": "📲 Who gets the Push Notification? (Select mobile phones)",
-                    "emergency_contacts": "📞 Emergency Contacts (Phone numbers CM.com Voice/SMS, comma separated)",
+                    "emergency_contacts": "📞 Emergency Contacts (Only +32 BE / +31 NL numbers for Voice/SMS, comma-separated)",
                     "call_resident_on_alarm": "Call the resident upon alarm (The Wake-Up Call)",
                     "call_after_seconds": "⏱️ Wait before calling for Push-Ack (Seconds)",
                     "escalation_after_seconds": "⏱️ Escalation: Wait before calling emergency contacts (Seconds)",
@@ -273,6 +273,9 @@
                     "temp_kantoor_nacht_mild_warm": "Night: Mild/Warm"
                 }
             }
+        },
+        "error": {
+  "invalid_benelux_phone": "Only Belgian (+32) and Dutch (+31) phone numbers are supported for voice/SMS escalation. Leave this field blank to use Push alerts and Vision AI exclusively."
         }
     }
 }
