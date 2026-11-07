@@ -76,7 +76,7 @@ class AionLogicBackgroundSensor(SensorEntity):
         if not scenario_name or scenario_name == "Onbekend": return "afwezig.jpg" 
         # Filter emojis weg die de Cloud toevoegt (zoals ⚡ en 🚨)
         clean_name = scenario_name.replace("⚡", "").replace("🚨", "").strip()
-        return f"{clean_name.replace(' - ', '-').replace(' ', '-').lower()}.jpg"
+        return f"{clean_name.replace(' - ', '-').replace(' ', '-').replace('_', '-').lower()}.jpg"
 
     @callback
     def _async_handle_event(self, event):
