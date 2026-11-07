@@ -180,7 +180,7 @@
                 "description": "{warning_text}Hoe moet Aion Logic escaleren in een noodsituatie?",
                 "data": {
                     "security_notify_service": "📲 Wie de Pushmelding sturen? (Selecteer de mobiele telefoons)",
-                    "emergency_contacts": "📞 Noodcontacten (Telefoonnummers CM.com Voice/SMS, komma-gescheiden)",
+                    "emergency_contacts": "📞 Noodcontacten (Uitsluitend +32 BE / +31 NL nummers voor Voice/SMS, komma-gescheiden)",
                     "call_resident_on_alarm": "Bel de bewoner op bij alarm (De Wake-Up Call)",
                     "call_after_seconds": "⏱️ Wacht met bellen voor Push-Bevestiging (Seconden)",
                     "escalation_after_seconds": "⏱️ Escalatie: Wacht met bellen noodcontacten (Seconden)",
@@ -274,6 +274,10 @@
                     "temp_kantoor_nacht_mild_warm": "Nacht: Mild/Warm"
                 }
             }
-        }
+        },
+        "error": {
+            "invalid_benelux_phone": "Alleen Belgische (+32) en Nederlandse (+31) telefoonnummers worden ondersteund voor telefonische/SMS escalatie. Laat dit veld leeg om uitsluitend Push-alarmen en Vision AI te gebruiken."
+        }    
     }
 }
+    
