@@ -45,9 +45,10 @@ class AionLogicScenarioSensor(SensorEntity):
     @callback
     def _async_handle_event(self, event):
         if new_scenario := event.data.get("scenario"):
+            raw_scen = event.data.get("raw_scenario") or new_scenario
             self._attr_native_value = new_scenario
             self._attr_extra_state_attributes = {
-                "raw_scenario": new_scenario.lower().replace(" ", "_").replace("⚡", "").strip()
+                "raw_scenario": raw_scen.lower().replace(" ", "_").replace("⚡", "").strip()
             }
             self.async_write_ha_state()
 
@@ -79,7 +80,7 @@ class AionLogicBackgroundSensor(SensorEntity):
 
     @callback
     def _async_handle_event(self, event):
-        if new_scenario := event.data.get("scenario"):
+        if new_scenario := (event.data.get("raw_scenario") or event.data.get("scenario")):
             self._attr_native_value = f"{ASSET_URL_PREFIX}/{self._format_scenario_to_filename(new_scenario)}"
             self.async_write_ha_state()
 
@@ -316,7 +317,8 @@ class AionLogicGuardianSensor(SensorEntity):
                 if t_state and str(t_state.state).lower() in ["home", "on", "connected", "true"]:
                     is_occupied = True            
             
-            current_scenario = str(self._scenario_sensor.native_value).lower()                
+            raw_scen_attr = (self._scenario_sensor.extra_state_attributes or {}).get("raw_scenario")
+            current_scenario = str(raw_scen_attr or self._scenario_sensor.native_value).lower()                
 
             if not is_occupied:
                 is_night_only = options.get("guard_autonomous_night_only", False)
