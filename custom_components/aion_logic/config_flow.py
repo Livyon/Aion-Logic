@@ -440,6 +440,10 @@ class AionLogicOptionsFlow(OptionsFlow):
 
     async def async_step_virtual_operator(self, user_input=None):
         """Handler voor de Virtuele Meldkamer (Cloud Escalatie)."""
+        errors = {}
+        country = str(getattr(self.hass.config, "country", "BE") or "BE").upper()
+        lang = str(getattr(self.hass.config, "language", "nl") or "nl").lower()
+        
         if user_input is not None:
             user_dict = dict(user_input)
             
@@ -447,14 +451,23 @@ class AionLogicOptionsFlow(OptionsFlow):
             if not contact or not str(contact).strip():
                 user_dict[CONF_EMERGENCY_CONTACTS] = ""                
             else:
-                user_dict[CONF_EMERGENCY_CONTACTS] = str(contact).strip()
+                raw_str = str(contact).strip()
+                for num in [c.strip() for c in raw_str.split(",") if c.strip()]:
+                    clean_n = num.replace(" ", "").replace("-", "").replace(".", "")
+                    is_valid_prefix = clean_n.startswith(("+32", "0032", "+31", "0031"))
+                    is_valid_local = clean_n.startswith("0") and not clean_n.startswith("00") and country in ("BE", "NL")
+                    if not (is_valid_prefix or is_valid_local) or len(clean_n) < 9:
+                        errors[CONF_EMERGENCY_CONTACTS] = "invalid_benelux_phone"
+                        break
+                user_dict[CONF_EMERGENCY_CONTACTS] = raw_str
                         
-            if notify_input := user_dict.get(CONF_SECURITY_NOTIFY):
-                if isinstance(notify_input, list):
-                    user_dict[CONF_SECURITY_NOTIFY] = ", ".join(notify_input)
-            self.options.update(user_dict)
-            self.hass.config_entries.async_update_entry(self.config_entry, options=self.options)
-            return await self.async_step_init()
+            if not errors:
+                if notify_input := user_dict.get(CONF_SECURITY_NOTIFY):
+                    if isinstance(notify_input, list):
+                        user_dict[CONF_SECURITY_NOTIFY] = ", ".join(notify_input)
+                self.options.update(user_dict)
+                self.hass.config_entries.async_update_entry(self.config_entry, options=self.options)
+                return await self.async_step_init()
 
         services = self.hass.services.async_services()
         notify_options = []
@@ -468,10 +481,19 @@ class AionLogicOptionsFlow(OptionsFlow):
         if not guardian_state or "Comfort" in guardian_state.state or "Uitgeschakeld" in guardian_state.state:
             warning = "⚠️ **LET OP: Uw huidige pakket bevat geen Guardian functionaliteit.**\n\n"
         warning = self._get_cloud_warning() + warning
-        
+
+        if country not in ("BE", "NL"):
+            if lang.startswith("nl"):
+                region_note = "**Regio-informatie:** Pushmeldingen en Vision AI werken wereldwijd. Telefonische oproepen en SMS via de Virtuele Meldkamer werken uitsluitend met Belgische (+32) en Nederlandse (+31) telefoonnummers.\n\n"
+            else:
+                region_note = "**Region Notice:** Push alerts and Vision AI work worldwide. Automated phone calls and SMS via the Virtual Dispatch Center only support Belgian (+32) and Dutch (+31) phone numbers.\n\n"
+            warning = region_note + warning  
+            
+        form_defaults = {**self.options, **(user_input or {})}        
         return self.async_show_form(
             step_id="virtual_operator", 
-            data_schema=_get_virtual_operator_schema(self.options, notify_options),
+            data_schema=_get_virtual_operator_schema(form_defaults, notify_options),
+            errors=errors,
             description_placeholders={"warning_text": warning}
         )
 
