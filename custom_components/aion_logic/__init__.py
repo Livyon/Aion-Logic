@@ -783,6 +783,24 @@ class AionLogicCoordinator:
             from homeassistant.helpers.event import async_call_later
             async_call_later(self.hass, 1800, _send_snoozed_reminder)
 
+        elif action == "AION_BATTERY_SNOOZE":
+            _LOGGER.info("Gebruiker stelt batterijwaarschuwing 7 dagen uit.")
+            services = []
+            sec_notify = self.options.get("security_notify_service")
+            if isinstance(sec_notify, str):
+                services.extend([s.strip() for s in sec_notify.split(',') if s.strip()])
+            elif isinstance(sec_notify, list):
+                services.extend(sec_notify)
+            for svc in set(services):
+                if not svc: continue
+                svc_name = svc if svc.startswith("notify.") else f"notify.{svc}"
+                n_domain, n_service = svc_name.split(".", 1)
+                try:
+                    await self.hass.services.async_call(n_domain, n_service, {"message": "clear_notification", "data": {"tag": "aion_battery_warning"}}, blocking=False)
+                except Exception: pass
+            self._snooze_battery_flag = True
+            await self.async_trigger_main_logic(event)
+        
     async def setup_listeners(self) -> None:
         _LOGGER.debug("Registreren van Aion Logic triggers...")
         self._entity_registry = async_get_entity_registry(self.hass)
@@ -1229,7 +1247,11 @@ class AionLogicCoordinator:
             
         if getattr(self, "_snooze_reminder_flag", False):
             context_data["snooze_reminder"] = True
-            self._snooze_reminder_flag = False            
+            self._snooze_reminder_flag = False
+
+        if getattr(self, "_snooze_battery_flag", False):
+            context_data["snooze_battery"] = True
+            self._snooze_battery_flag = False            
 
         weather_entity = self.options.get("weather_entity")
         outdoor_temp = float(self._get_state_attr(self.options.get("weather_entity"), "temperature", 15.0) or 15.0)
@@ -1404,7 +1426,7 @@ class AionLogicCoordinator:
                 if state.attributes.get("device_class") == "battery":
                     if state.domain == "sensor":
                         try:
-                            if float(state.state) < 30.0:
+                            if float(state.state) < 15.0:
                                 low_bats.append(state.name)
                         except ValueError:
                             pass
