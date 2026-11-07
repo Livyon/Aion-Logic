@@ -275,7 +275,7 @@
             }
         },
         "error": {
-  "invalid_benelux_phone": "Only Belgian (+32) and Dutch (+31) phone numbers are supported for voice/SMS escalation. Leave this field blank to use Push alerts and Vision AI exclusively."
+            "invalid_benelux_phone": "Only Belgian (+32) and Dutch (+31) phone numbers are supported for voice/SMS escalation. Leave this field blank to use Push alerts and Vision AI exclusively."
         }
     }
 }
